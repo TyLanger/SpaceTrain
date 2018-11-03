@@ -18,4 +18,12 @@ public class Player : MonoBehaviour {
 
 
 	}
+
+    void OnCollisionEnter(Collision col)
+    {
+        if(col.transform.tag == "Train" && transform.parent != col.transform)
+        {
+            transform.parent = col.transform;
+        }
+    }
 }

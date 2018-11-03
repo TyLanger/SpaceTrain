@@ -6,7 +6,7 @@ public class Train : MonoBehaviour {
 
 
     public float baseSpeed = 1;
-    float currentSpeed;
+    static float currentSpeed;
     public float maxSpeed = 2;
     public float acceleration = 1;
 
