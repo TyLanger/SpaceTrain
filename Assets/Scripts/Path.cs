@@ -6,12 +6,17 @@ public class Path : MonoBehaviour {
 
     public Transform[] waypoints;
     int pointIndex = 0;
+    Vector3[] evenPoints;
 
+    float pointSpacing = 2;
     float railWidth = 1;
 
 	// Use this for initialization
-	void Start () {
-	}
+	void Awake () {
+        evenPoints = new Vector3[1];
+        SpacePointsEqually();
+
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -54,7 +59,43 @@ public class Path : MonoBehaviour {
         // Want points every 1 unit apart, put in 7 points
         // get the vector from point to point
         // along that vector, put in points every x spacing units
-        
+
+        float totalDistance = 0;
+        for (int i = 0; i < waypoints.Length-1; i++)
+        {
+            totalDistance += Vector3.Distance(waypoints[i].position, waypoints[i + 1].position);
+        }
+        //Debug.Log(totalDistance);
+        Vector3[] points = new Vector3[(int)(totalDistance / pointSpacing)+2];
+        //Debug.Log(points.Length);
+        Vector3 dir;
+
+        int pointsIndex = 0;
+        Vector3 lastPoint;
+        float overshoot = 0;
+        for (int i = 0; i < waypoints.Length-1; i++)
+        {
+            dir = (waypoints[i + 1].position - waypoints[i].position).normalized;
+            //Debug.Log(dir);
+            int index = 0;
+            do
+            {
+                lastPoint = waypoints[i].position + dir *(overshoot + pointSpacing * index);
+                points[pointsIndex] = lastPoint;
+                index++;
+                pointsIndex++;
+
+                // assume all points are always moving up
+                // therefore you can't have track that runs straight horizontal
+            } while (lastPoint.z < waypoints[i + 1].position.z);
+            // carry over how much you overshot the last point to the next one
+            overshoot = Vector3.Distance(lastPoint, waypoints[i + 1].position);
+            // remove the last point
+            // so that the new points don't go past the original points
+            pointsIndex--;
+        }
+        //Debug.Log("Actual: " + pointIndex);
+        evenPoints = points;
         // remove the original points?
         // shoot past the far point?
         // carry over distance from a pair of points to the next?
@@ -113,6 +154,40 @@ public class Path : MonoBehaviour {
         }
     }
 
+    // Uses Evenly spaced points
+
+    public Vector3 GetPoint(int index)
+    {
+        if (index < evenPoints.Length - 1)
+        {
+            return evenPoints[index];
+        }
+
+        return evenPoints[evenPoints.Length - 1];
+    }
+
+    public Vector3 GetNextPoint()
+    {
+        if (pointIndex < evenPoints.Length - 1)
+        {
+            pointIndex++;
+        }
+        return evenPoints[pointIndex];
+    }
+
+    public Vector3 GetFirstPoint()
+    {
+        return evenPoints[0];
+    }
+
+    public int Count
+    {
+        get
+        {
+            return evenPoints.Length;
+        }
+    }
+    /* Uses given points
     public Vector3 GetPoint(int index)
     {
         if(index < waypoints.Length-1)
@@ -136,7 +211,7 @@ public class Path : MonoBehaviour {
     {
         return waypoints[0].position;
     }
-
+    
     public int Count
     {
         get
@@ -144,7 +219,7 @@ public class Path : MonoBehaviour {
             return waypoints.Length;
         }
     }
-    
+    */
     void OnDrawGizmos()
     {
         if(waypoints.Length == 0)
@@ -160,6 +235,24 @@ public class Path : MonoBehaviour {
         for (int i = 0; i < waypoints.Length-1; i++)
         {
             Gizmos.DrawLine(waypoints[i].position, waypoints[i + 1].position);
+        }
+
+        if( evenPoints != null)
+        {
+            if (evenPoints.Length > 1)
+            {
+                // only draw once the points have been calculated
+
+                foreach (var p in evenPoints)
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireSphere(p, 0.05f);
+                }
+                for (int i = 0; i < evenPoints.Length - 1; i++)
+                {
+                    Gizmos.DrawLine(evenPoints[i], evenPoints[i + 1]);
+                }
+            }
         }
     }
     

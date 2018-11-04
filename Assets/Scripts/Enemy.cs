@@ -21,6 +21,9 @@ public class Enemy : MonoBehaviour {
 
     public Transform TargetMarker;
 
+    public GameObject weapon;
+    public int weaponDamage = 15;
+
     // Use this for initialization
     void Start() {
         health = GetComponent<Health>();
@@ -39,6 +42,23 @@ public class Enemy : MonoBehaviour {
             TargetMarker.position = target;
             transform.position = Vector3.MoveTowards(transform.position, target, moveSpeed);
         }
+    }
+
+    void Attack()
+    {
+        
+    }
+
+    IEnumerator MeleeAttack()
+    {
+        //root
+
+        // start swing
+        // turn on weapon collider
+
+        // unroot
+
+        yield return null;
     }
 
     void FindTarget()
