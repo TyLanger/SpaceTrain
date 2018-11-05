@@ -16,6 +16,7 @@ public class Path : MonoBehaviour {
         evenPoints = new Vector3[1];
         SpacePointsEqually();
 
+        GetComponent<MeshFilter>().mesh = CreateRailMesh();
     }
 	
 	// Update is called once per frame
@@ -106,52 +107,67 @@ public class Path : MonoBehaviour {
         // Haven't I run into a problem where if the parent of the mesh is off the screen, the mesh doesn't get drawn?
     }
 
-    void CreateRailMesh()
+    Mesh CreateRailMesh()
     {
-        Vector3[] verts = new Vector3[waypoints.Length *2];
-        int[] tris = new int[6 * (waypoints.Length - 1)];
-        //Vector2 uvs = new Vector2[??];
+        Vector3[] verts = new Vector3[evenPoints.Length *2];
+        int[] tris = new int[6 * (evenPoints.Length - 1)];
+        Vector2[] uvs = new Vector2[verts.Length];
         int vertIndex = 0;
         int triIndex = 0;
-        for (int i = 0; i < waypoints.Length; i++)
+        for (int i = 0; i < evenPoints.Length; i++)
         {
             Vector3 dirToNext = Vector3.zero;
             // create 2 new points to the side of each point
             if(i == 0)
             {
                 // first point
-                dirToNext = waypoints[i + 1].position - waypoints[i].position;
+                dirToNext = evenPoints[i + 1] - evenPoints[i];
             }
-            else if (i < waypoints.Length)
+            else if (i < evenPoints.Length-1)
             {
                 // use the point ahead to find the direction to go
                 // use the direction from the last point to this point as well as from this point to the next point
-                Vector3 behind = waypoints[i].position - waypoints[i-1].position;
-                Vector3 ahead = waypoints[i + 1].position - waypoints[i].position;
+                Vector3 behind = evenPoints[i] - evenPoints[i-1];
+                Vector3 ahead = evenPoints[i + 1] - evenPoints[i];
                 // then average the directions to put the two new point in the middle
                 dirToNext = (behind + ahead) * 0.5f;
             }
             else
             {
                 //last point
-                dirToNext = waypoints[i].position - waypoints[i - 1].position;
+                dirToNext = evenPoints[i] - evenPoints[i - 1];
             }
             // add the new points perpendicular to the point
-            verts[vertIndex] = waypoints[i].position + new Vector3(-dirToNext.z, 0, dirToNext.x) * railWidth;
-            verts[vertIndex+1] = waypoints[i].position + new Vector3(dirToNext.z, 0, -dirToNext.x) * railWidth;
+            verts[vertIndex] = evenPoints[i] + new Vector3(-dirToNext.z, 0, dirToNext.x) * railWidth - transform.position;
+            verts[vertIndex+1] = evenPoints[i] + new Vector3(dirToNext.z, 0, -dirToNext.x) * railWidth - transform.position;
+
+            float completionPercent = i / (float)(evenPoints.Length - 1);
+            uvs[vertIndex] = new Vector2(0, completionPercent);
+            uvs[vertIndex+1] = new Vector2(1, completionPercent);
+
+
+            if (i < evenPoints.Length - 1)
+            {
+                tris[triIndex] = vertIndex;
+                tris[triIndex + 1] = vertIndex + 2;
+                tris[triIndex + 2] = vertIndex + 1;
+
+                tris[triIndex + 3] = vertIndex + 1;
+                tris[triIndex + 4] = vertIndex + 2;
+                tris[triIndex + 5] = vertIndex + 3;
+                triIndex += 6;
+            }
             vertIndex += 2;
-
-            tris[triIndex] = i;
-            tris[triIndex+1] = i + 2;
-            tris[triIndex+2] = i + 1;
-
-            tris[triIndex+3] = i + 1;
-            tris[triIndex+4] = i + 2;
-            tris[triIndex+5] = i + 3;
-            triIndex += 6;
-
-
         }
+
+        Mesh mesh = new Mesh
+        {
+            vertices = verts,
+            triangles = tris
+        };
+        mesh.uv = uvs;
+        //Debug.Log("Vets: " + mesh.vertexCount+" Triangles: "+mesh.triangles.Length);
+        return mesh;
     }
 
     // Uses Evenly spaced points
