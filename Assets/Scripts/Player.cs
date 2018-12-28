@@ -10,12 +10,28 @@ public class Player : MonoBehaviour {
 
     Health health;
 
+    public Weapon mainWeapon;
+    public Weapon secondaryWeapon;
+    Weapon currentWeapon;
+    bool usingMainWeapon = true;
+
 	// Use this for initialization
 	void Start () {
         health = GetComponent<Health>();
         health.OnDeath += OnPlayerDeath;
+
+        currentWeapon = mainWeapon;
 	}
 	
+    void Update()
+    {
+        if(Input.GetButton("Fire1"))
+        {
+            // use weapon
+            currentWeapon.Attack();
+        }
+    }
+
 	// Update is called once per frame
 	void FixedUpdate () {
 
@@ -23,6 +39,20 @@ public class Player : MonoBehaviour {
 
 
 	}
+
+
+    void SwapWeapons()
+    {
+        if(usingMainWeapon)
+        {
+            currentWeapon = secondaryWeapon;
+        }
+        else
+        {
+            currentWeapon = mainWeapon;
+        }
+        usingMainWeapon = !usingMainWeapon;
+    }
 
     void Spawn()
     {
