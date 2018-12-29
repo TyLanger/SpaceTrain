@@ -114,7 +114,7 @@ public class RangedWeapon : Weapon {
     bool CanFire()
     {
         // numBullets > 0
-        return (fireTimeout <= 0) && (numBulletsInClip > 0);
+        return (fireTimeout <= 0) && (numBulletsInClip > 0) && !reloading;
     }
 
     bool CanReload()
