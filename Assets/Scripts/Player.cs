@@ -14,6 +14,7 @@ public class Player : MonoBehaviour {
     public Weapon secondaryWeapon;
     Weapon currentWeapon;
     bool usingMainWeapon = true;
+    Vector3 aimPoint;
 
 	// Use this for initialization
 	void Start () {
@@ -21,6 +22,7 @@ public class Player : MonoBehaviour {
         health.OnDeath += OnPlayerDeath;
 
         currentWeapon = mainWeapon;
+        aimPoint = Vector3.forward;
 	}
 	
     void Update()
@@ -30,6 +32,28 @@ public class Player : MonoBehaviour {
             // use weapon
             currentWeapon.Attack();
         }
+        if(Input.GetButtonDown("Reload"))
+        {
+            currentWeapon.TryReload();
+        }
+
+        // face towards the mouse
+        // if using a controler, face where you're moving or where the right stick is facing
+        //Input.mousePosition;
+
+        Ray cameraRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Plane aimPlane = new Plane(Vector3.up, transform.position.y);
+
+        float camerDist;
+
+        if(aimPlane.Raycast(cameraRay, out camerDist))
+        {
+            aimPoint = cameraRay.GetPoint(camerDist);
+        }
+
+        transform.forward = aimPoint - transform.position;
+        //transform.rotation = Quaternion.Euler(0, Mathf.Atan2(transform.position.z - aimPoint.z, transform.position.x - aimPoint.x), 0);
+
     }
 
 	// Update is called once per frame

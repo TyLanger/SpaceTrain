@@ -16,4 +16,9 @@ public class Weapon : MonoBehaviour {
         // if it's abstract, each child needs an implementation
         // if it's virtual, they don't NEED it. This may be the case if meleeWeapon and RangedWeapon want to call it differently?
     }
+
+    public virtual void TryReload()
+    {
+
+    }
 }

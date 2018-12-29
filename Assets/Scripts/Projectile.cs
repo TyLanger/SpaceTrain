@@ -49,4 +49,17 @@ public class Projectile : MonoBehaviour {
         // this should be temporary
         Destroy(gameObject);
     }
+
+    void OnTriggerEnter(Collider col)
+    {
+        if(col.CompareTag("Enemy"))
+        {
+            // do damage
+            Cleanup();
+        }
+        else if(col.CompareTag("Obstacle"))
+        {
+            Cleanup();
+        }
+    }
 }
