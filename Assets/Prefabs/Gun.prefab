@@ -156,12 +156,12 @@ MonoBehaviour:
   isMelee: 0
   fireRate: 0.2
   bulletSpeed: 0.2
-  bulletDamage: 2
+  bulletDamage: 10
   clipSize: 10
-  autoReloadDelay: 3
+  autoReloadDelay: 1.5
   reloadTime: 0.85
   recoilForce: 0.42
-  parentRecoilMultiplier: 250
+  parentRecoilMultiplier: 175
   recoilPercent: 0
   recoilDecayRate: 0.03
   maxRecoilOffset: {x: 0, y: 0, z: -0.5}

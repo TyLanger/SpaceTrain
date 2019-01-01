@@ -36,7 +36,7 @@ public class Projectile : MonoBehaviour {
     {
         moveSpeed = speed;
         transform.forward = direction;
-        this.damage = _damage;
+        damage = _damage;
         
     }
 
@@ -55,6 +55,11 @@ public class Projectile : MonoBehaviour {
         if(col.CompareTag("Enemy"))
         {
             // do damage
+            Health h = col.GetComponent<Health>();
+            if(h != null)
+            {
+                h.TakeDamage(damage);
+            }
             Cleanup();
         }
         else if(col.CompareTag("Obstacle"))

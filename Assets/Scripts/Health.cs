@@ -9,9 +9,9 @@ public class Health : MonoBehaviour {
     // player, enemies, train cars
 
 
-    public int baseHp = 100;
+    public float baseHp = 100;
     [SerializeField]
-    int currentHp;
+    float currentHp;
 
     public event Action OnDeath;
     public event Action OnDamage;
@@ -33,7 +33,7 @@ public class Health : MonoBehaviour {
         currentHp = baseHp;
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(float damage)
     {
         if(OnDamage != null)
         {

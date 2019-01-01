@@ -99,6 +99,7 @@ public class RangedWeapon : Weapon {
         if(recoilPercent < 1)
         {
             recoilPercent += recoilForce;
+            recoilPercent = Mathf.Min(recoilPercent, 1.0f);
         }
 
         if (recoilPercent > 0f)

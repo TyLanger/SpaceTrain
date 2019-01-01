@@ -8,6 +8,8 @@ public class Enemy : MonoBehaviour {
     // other enemies should extend this for more functionality
 
     Health health;
+    public bool respawn = true;
+    Vector3 respawnPoint;
 
     public float moveSpeed = 0.1f;
     public float attackRange = 0.5f;
@@ -26,21 +28,58 @@ public class Enemy : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
+        respawnPoint = transform.position;
         health = GetComponent<Health>();
-        Invoke("InterceptTrain", 0.5f);
+        health.OnDeath += OnDeath;
+
+        if (trainEngine != null)
+        {
+            Invoke("InterceptTrain", 0.5f);
+        }
+        else
+        {
+            // temporary
+            // enemy stands still if there is no train
+            // i.e. when in the testing scene
+            target = transform.position;
+        }
     }
 
     // Update is called once per frame
     void FixedUpdate() {
         if (targetFound)
         {
-            TargetMarker.position = targetObject.transform.position;
+            if (TargetMarker != null)
+            {
+                TargetMarker.position = targetObject.transform.position;
+            }
             transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
         }
         else
         {
-            TargetMarker.position = target;
+            if (TargetMarker != null)
+            {
+                TargetMarker.position = target;
+            }
             transform.position = Vector3.MoveTowards(transform.position, target, moveSpeed);
+        }
+    }
+
+    void Respawn()
+    {
+        health.ResetHealth();
+        transform.position = respawnPoint;
+        GetComponent<Collider>().enabled = true;
+        GetComponent<MeshRenderer>().enabled = true;
+    }
+
+    void OnDeath()
+    {
+        if(respawn)
+        {
+            GetComponent<Collider>().enabled = false;
+            GetComponent<MeshRenderer>().enabled = false;
+            Invoke("Respawn", 3);
         }
     }
 
