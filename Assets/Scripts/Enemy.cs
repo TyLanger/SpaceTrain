@@ -81,6 +81,13 @@ public class Enemy : MonoBehaviour {
             GetComponent<MeshRenderer>().enabled = false;
             Invoke("Respawn", 3);
         }
+        else
+        {
+            // if it's not gonna respawn, just destroy it.
+            // maybe it should be recycled into a pool?
+            // depends how many enemies there gets to be
+            Destroy(gameObject);
+        }
     }
 
     void Attack()

@@ -35,12 +35,17 @@ public class RangedWeapon : Weapon {
     public Projectile projectile;
     public Transform bulletSpawnPoint;
 
+    // Audio
+    AudioSource audioSource;
+
     // Use this for initialization
     void Start () {
         parentRBody = GetComponentInParent<Rigidbody>();
         startOffset = transform.localPosition;
         startRotation = transform.localRotation;
         numBulletsInClip = clipSize;
+
+        audioSource = GetComponent<AudioSource>();
 	}
 	
     void Update()
@@ -76,6 +81,16 @@ public class RangedWeapon : Weapon {
         // TODO: Support for shotgun type weapons
         if (CanFire())
         {
+            if (!audioSource.isPlaying)
+            {
+                audioSource.Play();
+            }
+            else
+            {
+                // if it skips a sound, the sound is too long
+                // or the fire rate is too high
+                Debug.Log("Skipped sound");
+            }
             numBulletsInClip--;
             fireTimeout = fireRate;
             Projectile copy = Instantiate(projectile, bulletSpawnPoint.position, Quaternion.identity) as Projectile;

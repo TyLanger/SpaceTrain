@@ -12,6 +12,7 @@ public class Projectile : MonoBehaviour {
     // Particles
     // Impact particles
     // Impact sound
+    public GameObject bloodSplat;
 
     void Start()
     {
@@ -58,6 +59,13 @@ public class Projectile : MonoBehaviour {
             Health h = col.GetComponent<Health>();
             if(h != null)
             {
+                //bloodSplat.SetActive(true);
+                // create the blood splat particles
+                // using the position and roation of the bullet
+                // the ParticleController class should kill the particles
+                var splatCopy = Instantiate(bloodSplat, transform.position, transform.rotation);
+                // having the blood explode straight away from the enemy looks much better than using the bullet's rotation
+                splatCopy.transform.forward = transform.position - col.transform.position;
                 h.TakeDamage(damage);
             }
             Cleanup();
