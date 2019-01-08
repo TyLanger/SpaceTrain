@@ -16,15 +16,14 @@ public class Health : MonoBehaviour {
     public event Action OnDeath;
     public event Action OnDamage;
 
+    // should the Health class play sounds?
+    // it seems to make sense as hitting something with health should play a hit sound
+    AudioSource hitSound;
 
     // Use this for initialization
     void Start () {
         currentHp = baseHp;
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
+        hitSound = GetComponent<AudioSource>();
 	}
 
     public void ResetHealth()
@@ -35,6 +34,11 @@ public class Health : MonoBehaviour {
 
     public void TakeDamage(float damage)
     {
+        if(hitSound != null && !hitSound.isPlaying)
+        {
+            hitSound.Play();
+        }
+
         if(OnDamage != null)
         {
             OnDamage();

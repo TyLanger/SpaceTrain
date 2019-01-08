@@ -28,7 +28,10 @@ public class RangedWeapon : Weapon {
     public Vector3 maxRecoilOffset;
     Quaternion startRotation;
     public float maxRecoilRotationX;
-
+    public float maxRecoilRotationY;
+    // what was the recoilPercent when you last shot?
+    // for use with lerping the rotation
+    float recoilAtLastShot = 0;
 
     // can a weapon have multiple projectiles?
     // Probably. Also a way to swap between them
@@ -38,6 +41,10 @@ public class RangedWeapon : Weapon {
     // Audio
     AudioSource audioSource;
 
+    // Aim Arc
+    LineRenderer lr;
+    public int numAimSegments = 10;
+
     // Use this for initialization
     void Start () {
         parentRBody = GetComponentInParent<Rigidbody>();
@@ -46,6 +53,9 @@ public class RangedWeapon : Weapon {
         numBulletsInClip = clipSize;
 
         audioSource = GetComponent<AudioSource>();
+        lr = GetComponent<LineRenderer>();
+
+        //DrawAimArc();
 	}
 	
     void Update()
@@ -54,10 +64,17 @@ public class RangedWeapon : Weapon {
         // this works, but then the bullets fire up into the air instead of horizontally
         // either bullets need to drop or this needs to be visual only
         //transform.localRotation = Quaternion.Lerp(startRotation, Quaternion.Euler(maxRecoilRotationX, 0, 0), recoilPercent * recoilPercent * recoilPercent);
+        // left to right recoil on the gun. AKA bullet spread
+        if (recoilAtLastShot > 0)
+        {
+            transform.localRotation = Quaternion.Lerp(startRotation, transform.localRotation, recoilPercent / recoilAtLastShot);
+        }
+
+        //DrawAimArc();
     }
 
-	// Update is called once per frame
-	void FixedUpdate () {
+    // Update is called once per frame
+    void FixedUpdate () {
 		if(fireTimeout > 0)
         {
             fireTimeout -= Time.fixedDeltaTime;
@@ -69,6 +86,31 @@ public class RangedWeapon : Weapon {
             recoilPercent = Mathf.Max(0, recoilPercent);
         }
 	}
+
+    public override void UpdateAimPos(Vector3 aimPos)
+    {
+        DrawAimArc(aimPos);
+    }
+
+    void DrawAimArc(Vector3 endPoint)
+    {
+        // draws an arc that shows where bullets should go
+        // maxDist = vel * vel * Mathf.Sin(2 * angleRadians) / gravity
+        // maxTravelTime for bullets is 5
+        //float maxDistance = bulletSpeed * (5/Time.fixedDeltaTime);
+        //Vector3 maxPoint = transform.position + (transform.forward * maxDistance);
+        Vector3 maxPoint = endPoint;
+
+        Vector3[] arcArray = new Vector3[numAimSegments +1];
+
+        // <= so you make the line go right to the end
+        for (int i = 0; i <= numAimSegments; i++)
+        {
+            arcArray[i] = Vector3.Lerp(bulletSpawnPoint.position, maxPoint, (float)i / (float)numAimSegments);
+        }
+        lr.positionCount = numAimSegments + 1;
+        lr.SetPositions(arcArray);
+    }
 
     public override void Attack()
     {
@@ -96,7 +138,7 @@ public class RangedWeapon : Weapon {
             Projectile copy = Instantiate(projectile, bulletSpawnPoint.position, Quaternion.identity) as Projectile;
             copy.Create(bulletSpeed, transform.forward, bulletDamage);
             Recoil();
-            if(numBulletsInClip <= 0 && !reloading)
+            if (numBulletsInClip <= 0 && !reloading)
             {
                 delayedReloadCoroutine = StartCoroutine(DelayedReload(autoReloadDelay));
             }
@@ -125,6 +167,14 @@ public class RangedWeapon : Weapon {
                 parentRBody.AddForce(transform.forward * -1 * recoilPercent * recoilPercent * recoilPercent * recoilForce * parentRecoilMultiplier);
             }
         }
+
+        // get a random spread given the current recoil
+        // spread gets larger as recoil gets higher
+        float maxAngle = maxRecoilRotationY * recoilPercent;
+        float randAngle = Random.Range(-maxAngle, maxAngle);
+
+        transform.localEulerAngles = new Vector3(0, randAngle, 0);
+        recoilAtLastShot = recoilPercent;
     }
 
     bool CanFire()
@@ -180,13 +230,5 @@ public class RangedWeapon : Weapon {
             StartCoroutine(Reload());
         }
     }
-    /*
-    void Reload()
-    {
-        if (!reloading)
-        {
-            reloading = false;
-            numBulletsInClip = clipSize;
-        }
-    }*/
+
 }

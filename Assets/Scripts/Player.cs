@@ -42,7 +42,7 @@ public class Player : MonoBehaviour {
         //Input.mousePosition;
 
         Ray cameraRay = Camera.main.ScreenPointToRay(Input.mousePosition);
-        Plane aimPlane = new Plane(Vector3.up, transform.position.y);
+        Plane aimPlane = new Plane(Vector3.up, transform.position);
 
         float camerDist;
 
@@ -53,6 +53,8 @@ public class Player : MonoBehaviour {
 
         transform.forward = aimPoint - transform.position;
         //transform.rotation = Quaternion.Euler(0, Mathf.Atan2(transform.position.z - aimPoint.z, transform.position.x - aimPoint.x), 0);
+
+        currentWeapon.UpdateAimPos(aimPoint);
 
     }
 

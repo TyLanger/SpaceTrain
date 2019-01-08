@@ -21,4 +21,9 @@ public class Weapon : MonoBehaviour {
     {
 
     }
+
+    public virtual void UpdateAimPos(Vector3 aimPos)
+    {
+
+    }
 }
