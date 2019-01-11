@@ -89,6 +89,7 @@ public class RangedWeapon : Weapon {
 
     public override void UpdateAimPos(Vector3 aimPos)
     {
+        // aim pos at the moment only affects the aiming line
         DrawAimArc(aimPos);
     }
 

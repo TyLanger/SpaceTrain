@@ -6,10 +6,6 @@ public class Weapon : MonoBehaviour {
 
     public bool isMelee = false;
 
-    
-
-    float damage;
-
     public virtual void Attack()
     {
         // maybe this should be abstract instead of virtual?

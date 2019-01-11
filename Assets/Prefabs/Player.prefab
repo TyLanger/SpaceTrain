@@ -500,8 +500,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 0.1
   spawnPoint: {fileID: 0}
+  mainCam: {fileID: 0}
   mainWeapon: {fileID: 114975217069929952}
   secondaryWeapon: {fileID: 0}
+  ControllerAiming: 1
+  thumbCursor: {fileID: 0}
 --- !u!114 &114954137825848268
 MonoBehaviour:
   m_ObjectHideFlags: 1

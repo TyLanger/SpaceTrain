@@ -7,12 +7,19 @@ public class Enemy : MonoBehaviour {
     // base enemy class
     // other enemies should extend this for more functionality
 
+    public event System.Action OnDeath;
     Health health;
     public bool respawn = true;
     Vector3 respawnPoint;
+    bool alive = true;
+
 
     public float moveSpeed = 0.1f;
+    // the range where it will find new targets to attack
+    public float aggroRange = 4;
+    // the range where it will attemp to atack targets
     public float attackRange = 0.5f;
+    bool canMove = true;
 
     public Vector3 target;
     GameObject targetObject;
@@ -23,15 +30,15 @@ public class Enemy : MonoBehaviour {
 
     public Transform TargetMarker;
 
-    public GameObject weapon;
+    public Weapon weapon;
     public int weaponDamage = 15;
 
     // Use this for initialization
     void Start() {
         respawnPoint = transform.position;
         health = GetComponent<Health>();
-        health.OnDeath += OnDeath;
-
+        health.OnDeath += Die;
+        
         if (trainEngine != null)
         {
             Invoke("InterceptTrain", 0.5f);
@@ -42,18 +49,35 @@ public class Enemy : MonoBehaviour {
             // enemy stands still if there is no train
             // i.e. when in the testing scene
             target = transform.position;
+            if (allTargets.Length > 0)
+            {
+                FindTarget();
+            }
         }
     }
 
     // Update is called once per frame
     void FixedUpdate() {
+        if (!alive)
+            return;
+
         if (targetFound)
         {
             if (TargetMarker != null)
             {
                 TargetMarker.position = targetObject.transform.position;
             }
-            transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
+            if(Vector3.Distance(transform.position, targetObject.transform.position) < attackRange)
+            {
+                Attack();
+            }
+
+            if (canMove)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
+            }
+            // face where you're going
+            transform.forward = targetObject.transform.position - transform.position;
         }
         else
         {
@@ -61,7 +85,20 @@ public class Enemy : MonoBehaviour {
             {
                 TargetMarker.position = target;
             }
-            transform.position = Vector3.MoveTowards(transform.position, target, moveSpeed);
+            else if (allTargets.Length > 0)
+            {
+                FindTarget();
+            }
+            if (canMove)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, target, moveSpeed);
+            }
+            // face where you're going
+            if (target != transform.position)
+            {
+                transform.forward = target - transform.position;
+            }
+
         }
     }
 
@@ -71,12 +108,21 @@ public class Enemy : MonoBehaviour {
         transform.position = respawnPoint;
         GetComponent<Collider>().enabled = true;
         GetComponent<MeshRenderer>().enabled = true;
+        GetComponent<Rigidbody>().useGravity = true;
+        alive = true;
     }
 
-    void OnDeath()
+    void Die()
     {
+        alive = false;
+        if(OnDeath != null)
+        {
+            // tell any listeners that you died
+            OnDeath();
+        }
         if(respawn)
         {
+            GetComponent<Rigidbody>().useGravity = false;
             GetComponent<Collider>().enabled = false;
             GetComponent<MeshRenderer>().enabled = false;
             Invoke("Respawn", 3);
@@ -92,19 +138,7 @@ public class Enemy : MonoBehaviour {
 
     void Attack()
     {
-        
-    }
-
-    IEnumerator MeleeAttack()
-    {
-        //root
-
-        // start swing
-        // turn on weapon collider
-
-        // unroot
-
-        yield return null;
+        weapon.Attack();
     }
 
     void FindTarget()
@@ -118,7 +152,7 @@ public class Enemy : MonoBehaviour {
         for (int i = 0; i < allTargets.Length; i++)
         {
             currentDst = Vector3.Distance(allTargets[i].transform.position, transform.position);
-            if(currentDst < attackRange)
+            if(currentDst < aggroRange)
             {
                 targetObject = allTargets[i];
                 //attack that
@@ -183,7 +217,7 @@ public class Enemy : MonoBehaviour {
         {
             interceptPoint = trainEngine.PositionInTime(t);
             currentDst = Vector3.Distance(transform.position, interceptPoint);
-            if(currentDst+attackRange < moveSpeed * (t/Time.fixedDeltaTime))
+            if(currentDst+aggroRange < moveSpeed * (t/Time.fixedDeltaTime))
             {
                 // move towards the intercept point
                 // when you get there, you should be in range to attack
@@ -201,5 +235,15 @@ public class Enemy : MonoBehaviour {
                 }
             }
         }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, aggroRange);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+
     }
 }
