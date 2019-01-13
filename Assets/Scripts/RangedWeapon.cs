@@ -27,6 +27,8 @@ public class RangedWeapon : Weapon {
     Vector3 startOffset;
     public Vector3 maxRecoilOffset;
     Quaternion startRotation;
+    // the rotation the gun wants given no spread
+    Quaternion intendedRotation;
     public float maxRecoilRotationX;
     public float maxRecoilRotationY;
     // what was the recoilPercent when you last shot?
@@ -37,6 +39,7 @@ public class RangedWeapon : Weapon {
     // Probably. Also a way to swap between them
     public Projectile projectile;
     public Transform bulletSpawnPoint;
+    Vector3 aimPosition;
 
     // Audio
     AudioSource audioSource;
@@ -50,24 +53,32 @@ public class RangedWeapon : Weapon {
         parentRBody = GetComponentInParent<Rigidbody>();
         startOffset = transform.localPosition;
         startRotation = transform.localRotation;
+        intendedRotation = startRotation;
         numBulletsInClip = clipSize;
 
         audioSource = GetComponent<AudioSource>();
         lr = GetComponent<LineRenderer>();
 
+        aimPosition = transform.forward;
         //DrawAimArc();
 	}
 	
     void Update()
     {
+        // move the gun backwards based on the recoilPercent
         transform.localPosition = Vector3.Lerp(startOffset, maxRecoilOffset, recoilPercent * recoilPercent * recoilPercent);
         // this works, but then the bullets fire up into the air instead of horizontally
         // either bullets need to drop or this needs to be visual only
         //transform.localRotation = Quaternion.Lerp(startRotation, Quaternion.Euler(maxRecoilRotationX, 0, 0), recoilPercent * recoilPercent * recoilPercent);
+        
         // left to right recoil on the gun. AKA bullet spread
         if (recoilAtLastShot > 0)
         {
-            transform.localRotation = Quaternion.Lerp(startRotation, transform.localRotation, recoilPercent / recoilAtLastShot);
+            transform.rotation = Quaternion.Lerp(intendedRotation, transform.rotation, recoilPercent / recoilAtLastShot);
+        }
+        else
+        {
+            transform.rotation = intendedRotation;
         }
 
         //DrawAimArc();
@@ -91,6 +102,10 @@ public class RangedWeapon : Weapon {
     {
         // aim pos at the moment only affects the aiming line
         DrawAimArc(aimPos);
+        //aimPosition = aimPos;
+        // the gun wants to point towards where the aim pos is
+        // then recoil controls where it's actually facing
+        intendedRotation = Quaternion.LookRotation(aimPos - transform.position);
     }
 
     void DrawAimArc(Vector3 endPoint)
@@ -138,6 +153,8 @@ public class RangedWeapon : Weapon {
             fireTimeout = fireRate;
             Projectile copy = Instantiate(projectile, bulletSpawnPoint.position, Quaternion.identity) as Projectile;
             copy.Create(bulletSpeed, transform.forward, bulletDamage);
+            //copy.Create(bulletSpeed, aimPosition - bulletSpawnPoint.position, bulletDamage);
+
             Recoil();
             if (numBulletsInClip <= 0 && !reloading)
             {
@@ -230,6 +247,15 @@ public class RangedWeapon : Weapon {
 
             StartCoroutine(Reload());
         }
+    }
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.blue;
+        //Gizmos.DrawLine(intendedRotation)
+        
+        Gizmos.DrawLine(transform.position, transform.position + intendedRotation * Vector3.forward * 10);
+
     }
 
 }
