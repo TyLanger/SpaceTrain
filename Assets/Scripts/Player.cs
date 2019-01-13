@@ -92,7 +92,8 @@ public class Player : MonoBehaviour {
         }
 
         // look towards where you're aiming
-        transform.forward = aimPoint - transform.position;
+        //transform.forward = aimPoint - transform.position;
+        transform.forward = new Vector3(aimPoint.x - transform.position.x, 0, aimPoint.z - transform.position.z);
 
         // tell your weapon where you're aiming
         currentWeapon.UpdateAimPos(aimPoint);
