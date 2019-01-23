@@ -11,12 +11,18 @@ public class Path : MonoBehaviour {
     float pointSpacing = 2;
     float railWidth = 1;
 
+    public Transform[] cornerTestTransforms;
+    Vector3[] cornerTestPoints;
+    public float maxAngle = 45;
+
 	// Use this for initialization
 	void Awake () {
         evenPoints = new Vector3[1];
         SpacePointsEqually();
 
         GetComponent<MeshFilter>().mesh = CreateRailMesh();
+
+        cornerTestPoints = SmoothCorner(cornerTestTransforms[0].position, cornerTestTransforms[1].position, cornerTestTransforms[2].position, maxAngle, pointSpacing);
     }
 	
 	// Update is called once per frame
@@ -105,6 +111,102 @@ public class Path : MonoBehaviour {
         // then I could only build them when I needed them
         // and destroy them once the train is past them
         // Haven't I run into a problem where if the parent of the mesh is off the screen, the mesh doesn't get drawn?
+    }
+
+    Vector3[] SmoothCorner(Vector3 fromPt, Vector3 cornerPt, Vector3 toPt, float maxAngle, float segmentLength)
+    {
+        // angle between vectors
+        // cos(angle) = dot(vectorA, VectorB) / magnitude(VectorA)*magnitude(VectorB)
+        //                  toPt
+        //              |  /
+        //              |A/
+        // cornerPt ___ |/
+        //              |B
+        //              |
+        //              fromPt
+        // cornerPt is where they intersect
+        //
+        // I think I want angle A, not B
+        // And I think signedAngle gets me that
+        // Is B always 180-A for any orientation of these vectors? Probably
+
+        // Can I also assume the vectors are rotated around Vector3.up?
+        // Or should I find the cross between the 2 vectors?
+        float cornerAngle = Vector3.SignedAngle(cornerPt-fromPt, toPt-cornerPt, Vector3.up);
+        //Debug.Log("Corner Angle: " + cornerAngle);
+        // how to round? truncate or round? If I truncate, I think sometimes I may end up with 1 too few segments
+        // corner angle is negative if it's measuring counter clockwise
+        int numNewPoints = Mathf.Abs(Mathf.RoundToInt(cornerAngle / maxAngle));
+        //Debug.Log("Num new points: " + numNewPoints);
+        // this is the real angle all the segments will be at
+        // should be close as close to maxAngle as they can get
+        float angle = cornerAngle / numNewPoints;
+        //Debug.Log("Angle: " + angle);
+        // there will be one fewer segments than the number of points
+        int numSegments = numNewPoints - 1;
+
+        Vector3[] cornerPoints = new Vector3[numNewPoints];
+
+        
+        // find the direction the points are going from fromPt to cornerPt
+        Vector3 currentDir = (cornerPt - fromPt).normalized;
+        //Debug.Log("Current Dir: " + currentDir);
+        cornerPoints[0] = Vector3.zero;
+
+        
+        for (int i = 1; i <= numSegments; i++)
+        {
+            // starting from the start,
+            // I want a new point segmentLength away at angle angle from the current vector
+
+            // rotate current direction by angle
+            // 2D rotation
+            // x' = xCos() - zSin()
+            // z' = xSin() + zCos()
+            float x = currentDir.x;
+            float z = currentDir.z;
+            float sin = Mathf.Sin(-angle * Mathf.Deg2Rad);
+            float cos = Mathf.Cos(-angle * Mathf.Deg2Rad);
+            currentDir = new Vector3(x * cos - z * sin, currentDir.y, x * sin + z * cos).normalized;
+            //Debug.Log("Current Dir: " + currentDir);
+            // then the new point is
+            // points are added onto where the last one was
+            // all points are segmentLength apart
+            cornerPoints[i] = cornerPoints[i-1] + currentDir * segmentLength;
+        }
+
+        // figure out the distance from the first point to the last in a straight line
+        float dist = Vector3.Distance(cornerPoints[0], cornerPoints[cornerPoints.Length - 1]);
+
+        // solve the triangle made by the first point, the corner, and the last point
+        // Made a right triangle by taking the midpoint between the first point and last point
+        // Could have done it with the whole triangle, but I did it this way first
+        // TODO: don't cut the triangle in half
+        // lowercase are side lengths
+        // uppercase are angles
+        // a is half the length from point[0] to point[length-1] or half the measured dist
+        // in the figure above, cornerAngle is A. We want B from the figure above so sub 180 and then half because we're using half the triangle
+        // C is 90 because it's a right triangle
+        float a = dist/2;
+        float A = (180-cornerAngle)/2;
+        float C = 90;
+        //Debug.LogFormat("a: {0}, A: {1}, B: {2}, C: {3}", a, A, A, C);
+
+        // calculate the side length using Sine Law
+        float distFromCorner = (a * Mathf.Sin(C * Mathf.Deg2Rad)) / Mathf.Sin(A * Mathf.Deg2Rad);
+        //Debug.Log("Dist from Corner: " + distFromCorner);
+
+        // dist from the corner tells us how far away from the corner the end points are (it's the same for either end point
+        // using the vector from the corner to fromPt, place the first point distFromCorner distance in that direction
+        cornerPoints[0] = cornerPt + distFromCorner * (fromPt - cornerPt).normalized;
+        // all the points are oriented in relation to the first point.
+        // Just add the first point's new position to their position and it translates their positions to world coordinates.
+        for (int i = 1; i <= numSegments; i++)
+        {
+            cornerPoints[i] += cornerPoints[0];
+        }
+
+        return cornerPoints;
     }
 
     Mesh CreateRailMesh()
@@ -270,6 +372,34 @@ public class Path : MonoBehaviour {
                 }
             }
         }
+
+        Gizmos.color = Color.white;
+        // Corner Test
+        foreach (var t in cornerTestTransforms)
+        {
+            Gizmos.DrawWireSphere(t.position, 0.1f);
+        }
+        for (int i = 0; i < cornerTestTransforms.Length-1; i++)
+        {
+            Gizmos.DrawLine(cornerTestTransforms[i].position, cornerTestTransforms[i + 1].position);
+        }
+
+        if(cornerTestPoints != null)
+        {
+            if(cornerTestPoints.Length > 1)
+            {
+                Gizmos.color = Color.blue;
+                foreach (var p in cornerTestPoints)
+                {
+                    Gizmos.DrawWireSphere(p, 0.05f);
+                }
+                for (int i = 0; i < cornerTestPoints.Length - 1; i++)
+                {
+                    Gizmos.DrawLine(cornerTestPoints[i], cornerTestPoints[i + 1]);
+                }
+            }
+        }
+
     }
     
 }
