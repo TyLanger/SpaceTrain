@@ -365,6 +365,23 @@ public class Path : MonoBehaviour {
             return evenPoints.Length;
         }
     }
+
+    public Vector3 GetPointInDistance(int fromIndex, float dist)
+    {
+        // find what point you would be at given dist distance.
+        // Follow the track for this distance and find what point that is.
+        
+        int numPoints = Mathf.RoundToInt(dist / pointSpacing);
+        if(fromIndex+numPoints < evenPoints.Length)
+        {
+            return GetPoint(fromIndex + numPoints);
+        }
+        else
+        {
+            // return the last point
+            return GetPoint(evenPoints.Length - 1);
+        }
+    }
     /* Uses given points
     public Vector3 GetPoint(int index)
     {

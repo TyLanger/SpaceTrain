@@ -64,6 +64,13 @@ public class Train : MonoBehaviour {
     {
         // calculate where on the tracks the train will be in t seconds
         float totalDist = currentSpeed * (t / Time.fixedDeltaTime);
+
+        // new implementation
+        return path.GetPointInDistance(frontWheelIndex, totalDist);
+
+
+        // original implementation
+        /*
         int i = frontWheelIndex;
         Vector3 lastPoint = transform.position;
         while(totalDist > 0)
@@ -78,6 +85,7 @@ public class Train : MonoBehaviour {
         // the point returned will not be passed by that time if the train stays at the same speed
         Debug.Log("Train Pos in " + t + ": " + lastPoint);
         return lastPoint;
+        */
     }
 
     void ReachedEndOfLine()

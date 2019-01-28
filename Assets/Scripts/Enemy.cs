@@ -194,7 +194,7 @@ public class Enemy : MonoBehaviour {
             {
                 // can make it to that point in time
                 target = interceptPoint;
-                Debug.Log("Success");
+                Debug.Log("Successful intercept at time = "+t);
                 return;
             }
             else
