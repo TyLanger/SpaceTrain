@@ -25,7 +25,7 @@ GameObject:
   - component: {fileID: 114482068216194728}
   - component: {fileID: 54529473783870096}
   m_Layer: 0
-  m_Name: Bullet
+  m_Name: Player Bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -115,6 +115,7 @@ MonoBehaviour:
   moveSpeed: 0
   maxTravelTime: 5
   damage: 1
+  hitTag: Enemy
   bloodSplat: {fileID: 1109557727859928, guid: 693cc4a96db40d844bf7bb925a0f4cad, type: 2}
 --- !u!135 &135950065641950684
 SphereCollider:

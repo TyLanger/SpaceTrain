@@ -9,6 +9,10 @@ public class Projectile : MonoBehaviour {
 
     public float damage;
 
+    // who does this bullet hurt?
+    // the player? The enemies?
+    public string hitTag = "Enemy";
+
     // Particles
     // Impact particles
     // Impact sound
@@ -53,7 +57,7 @@ public class Projectile : MonoBehaviour {
 
     void OnTriggerEnter(Collider col)
     {
-        if(col.CompareTag("Enemy"))
+        if(col.CompareTag(hitTag))
         {
             // do damage
             Health h = col.GetComponent<Health>();

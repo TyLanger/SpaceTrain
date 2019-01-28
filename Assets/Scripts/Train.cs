@@ -10,12 +10,6 @@ public class Train : MonoBehaviour {
     public float maxSpeed = 2;
     public float acceleration = 1;
 
-    //public float rotationMultiplier = 10;
-
-    /*
-    public GameObject[] path;
-    int pathIndex = 0;
-    */
 
     public Path path;
     Vector3 pathTarget;
@@ -27,9 +21,6 @@ public class Train : MonoBehaviour {
     int frontWheelIndex = 0;
     int rearWheelIndex = 0;
 
-
-    int currentHp;
-    int maxHp;
 
 
 	// Use this for initialization

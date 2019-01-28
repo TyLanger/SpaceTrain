@@ -16,6 +16,11 @@ public class Health : MonoBehaviour {
     public event Action OnDeath;
     public event Action OnDamage;
 
+    public SpriteRenderer healthBar;
+    public Vector3 offset;
+    float maxWidth = 0.25f;
+    float tickWidth = 0.05f;
+
     // should the Health class play sounds?
     // it seems to make sense as hitting something with health should play a hit sound
     AudioSource hitSound;
@@ -25,6 +30,14 @@ public class Health : MonoBehaviour {
         currentHp = baseHp;
         hitSound = GetComponent<AudioSource>();
 	}
+
+    void Update()
+    {
+        if (healthBar == null)
+            return;
+
+        healthBar.transform.position = transform.position + offset;
+    }
 
     public void ResetHealth()
     {
@@ -48,6 +61,10 @@ public class Health : MonoBehaviour {
         {
             currentHp = 0;
             Death();
+        }
+        if(healthBar != null)
+        {
+            healthBar.size = new Vector2(currentHp / baseHp * maxWidth, 0.09f);
         }
     }
 

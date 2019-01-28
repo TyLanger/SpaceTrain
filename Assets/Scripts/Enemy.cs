@@ -61,6 +61,7 @@ public class Enemy : MonoBehaviour {
         if (!alive)
             return;
 
+        // target is found when a target from the list is within aggro range
         if (targetFound)
         {
             if (TargetMarker != null)
@@ -78,6 +79,10 @@ public class Enemy : MonoBehaviour {
             }
             // face where you're going
             transform.forward = targetObject.transform.position - transform.position;
+            if(weapon != null)
+            {
+                weapon.UpdateAimPos(targetObject.transform.position);
+            }
         }
         else
         {
