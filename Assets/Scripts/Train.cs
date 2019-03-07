@@ -88,6 +88,39 @@ public class Train : MonoBehaviour {
         */
     }
 
+    public Vector3[] GetBoardingLocationsInTime(float t, bool rightSide = true)
+    {
+        // train will have some spots on them for jumping aboard
+        // the number of them will be created elswhere later on
+        // just like this right now to suppress errors
+        int numBoardingSpots = 6;
+        Vector3[] boardingSpots = new Vector3[numBoardingSpots];
+
+        float totalDist = currentSpeed * (t / Time.fixedDeltaTime);
+        // can't use Train.PositionInTime() because it only uses the frontWheelIndex
+        // this method should largely replace that one anyway
+        Vector3 frontPt = path.GetPointInDistance(frontWheelIndex, totalDist);
+        Vector3 rearPt = path.GetPointInDistance(rearWheelIndex, totalDist);
+
+        Vector3 trainForward = frontPt - rearPt;
+        float angle = Vector3.Angle(Vector3.forward, trainForward);
+        // due to rounding in path.GetPointInDistance()
+        // all these positions will be approximate
+
+        // rotate the boarding spots.... somehow
+        // x' = xcos() - ysin()
+        // y' = xSin() + yCos()
+        // should work I think
+        // careful converting from local space to world space
+
+        // order the points front to back left side, then front to back rights side?
+        // or have a separate method of computing left and right side?
+        // just a parameter?
+        // enemies should know which side they're on to cut down on some calculations
+
+        return boardingSpots;
+    }
+
     void ReachedEndOfLine()
     {
         currentSpeed = 0;
