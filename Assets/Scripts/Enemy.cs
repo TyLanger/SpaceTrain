@@ -41,7 +41,9 @@ public class Enemy : MonoBehaviour {
         
         if (trainEngine != null)
         {
-            Invoke("InterceptTrain", 0.5f);
+            target = transform.position;
+
+            Invoke("InterceptTrain", 6f);
         }
         else
         {
@@ -179,13 +181,37 @@ public class Enemy : MonoBehaviour {
     {
         // try to get to the track ahead of the train
 
-        Vector3 interceptPoint;
+        //Vector3 interceptPoint;
+        Vector3[] boardingPoints;
         float closestDst = 0;
         float currentDst = 0;
 
+
+        // Finds A close enough boarding point
+        // not THE closest boarding point yet
         for (int t = 5; t <= 20; t += 5)
         {
-
+            boardingPoints = trainEngine.GetBoardingLocationsInTime(t);
+            for (int i = 0; i < boardingPoints.Length; i++)
+            {
+                currentDst = Vector3.Distance(transform.position, boardingPoints[i]);
+                // x/ time.fixedDeltaTime is the number of fixed updates there are in x seconds
+                if (currentDst < moveSpeed * (t/Time.fixedDeltaTime))
+                {
+                    target = boardingPoints[i];
+                    Debug.Log("Successful Boarding at time = " + t);
+                    return;
+                }
+                else
+                {
+                    if(currentDst < closestDst || closestDst == 0)
+                    {
+                        closestDst = currentDst;
+                        target = boardingPoints[i];
+                    }
+                }
+            }
+            /*
             interceptPoint = trainEngine.PositionInTime(t);
             // x/ time.fixedDeltaTime is the number of fixed updates there are in x seconds
             currentDst = Vector3.Distance(transform.position, interceptPoint);
@@ -206,6 +232,7 @@ public class Enemy : MonoBehaviour {
                     target = interceptPoint;
                 }
             }
+            */
         }
     }
 
@@ -250,5 +277,37 @@ public class Enemy : MonoBehaviour {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
 
+    }
+
+    void OnCollisionEnter(Collision col)
+    {
+        // when on the train, make it your parent so you move along with it
+        // can break if the enemy runs into the side of the train
+        // stolen from the Player class. Maybe there should be a parent class that has the functionality moving on the train requires
+        if (col.transform.CompareTag("Train") && transform.parent != col.transform)
+        {
+            transform.parent = col.transform;
+        }
+    }
+
+    void OnTriggerEnter(Collider col)
+    {
+        if(col.CompareTag("GroundLink"))
+        {
+            BoardingLink link = col.GetComponentInParent<BoardingLink>();
+            if(link != null)
+            {
+                // teleport to the other end of the link
+                // on the train
+                transform.position = link.GetOnBoardPosition();
+                // stop moving
+                // otherwise the enemy will just try to jump off the train
+                canMove = false;
+            }
+            else
+            {
+                Debug.Log("Link is null");
+            }
+        }
     }
 }

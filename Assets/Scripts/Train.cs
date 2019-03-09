@@ -148,7 +148,7 @@ public class Train : MonoBehaviour {
         // the problem is even worse for additional train cars. They take even longer to get on the track (~15 seconds with the current 3 cars)
 
         Vector3 trainForward = frontPt - rearPt;
-        float angle = Vector3.Angle(Vector3.forward, trainForward) * Mathf.Deg2Rad * -1;
+        float angle = Vector3.SignedAngle(Vector3.forward, trainForward, Vector3.up) * Mathf.Deg2Rad * -1;
         // due to rounding in path.GetPointInDistance()
         // all these positions will be approximate
         // path.GetPointInDistance() returns a location exactly on one of its points. It won't return a location between points.

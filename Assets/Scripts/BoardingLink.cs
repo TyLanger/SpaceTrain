@@ -40,8 +40,14 @@ public class BoardingLink : MonoBehaviour {
 		// update the height of the ground point to remain attached to the ground?
 	}
 
+    public Vector3 GetOnBoardPosition()
+    {
+        return trainPoint.position;
+    }
+
     public Vector3 GroundPointAtPosition(Vector3 trainPos, float trainAngle)
     {
+        //Debug.Log(trainAngle);
         // given a train position and angle,
         // where will the ground point be?
 
