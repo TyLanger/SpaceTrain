@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class Train : MonoBehaviour {
 
@@ -27,6 +28,8 @@ public class Train : MonoBehaviour {
     // Boarding
     public BoardingLink[] leftLinks;
     public BoardingLink[] rightLinks;
+    public event Action OnBoardable;
+    //public Delegate Reminder();
 
     // Boarding Testing
     float testTime = 4;
@@ -93,6 +96,15 @@ public class Train : MonoBehaviour {
         {
             //oldPathTarget = pathTarget;
             rearWheelIndex++;
+            if (rearWheelIndex == 1)
+            {
+                // can't be boarded until the reare wheels are on the track
+                // now they are so tell things that are waiting that you can be boarded
+                if (OnBoardable != null)
+                {
+                    OnBoardable();
+                }
+            }
             rearPathTarget = path.GetPoint(rearWheelIndex);
         }
 
@@ -125,6 +137,21 @@ public class Train : MonoBehaviour {
         Debug.Log("Train Pos in " + t + ": " + lastPoint);
         return lastPoint;
         */
+    }
+
+    public bool CanBoard(Action reminderMethod)
+    {
+        // only allow things to try to board if the rear wheel is on the track
+        if (rearWheelIndex > 0)
+        {
+            return true;
+        }
+        else
+        {
+            // if not boardable, add the reminderMethod to be called when it is boardable
+            OnBoardable += reminderMethod;
+            return false;
+        }
     }
 
     public Vector3[] GetBoardingLocationsInTime(float t, bool rightSide = true)

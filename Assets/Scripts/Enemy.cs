@@ -43,7 +43,7 @@ public class Enemy : MonoBehaviour {
         {
             target = transform.position;
 
-            Invoke("InterceptTrain", 6f);
+            Invoke("InterceptTrain", 0.5f);
         }
         else
         {
@@ -122,6 +122,8 @@ public class Enemy : MonoBehaviour {
     void Die()
     {
         alive = false;
+        // if attached to a train, forget about it
+        transform.parent = null;
         if(OnDeath != null)
         {
             // tell any listeners that you died
@@ -181,7 +183,14 @@ public class Enemy : MonoBehaviour {
     {
         // try to get to the track ahead of the train
 
-        //Vector3 interceptPoint;
+        // check if you can board
+        // if not, run this method again when it is ready to board
+        if(!trainEngine.CanBoard(InterceptTrain))
+        {
+            Debug.Log(trainEngine.name + " is not ready to board");
+            return;
+        }
+
         Vector3[] boardingPoints;
         float closestDst = 0;
         float currentDst = 0;
@@ -199,7 +208,7 @@ public class Enemy : MonoBehaviour {
                 if (currentDst < moveSpeed * (t/Time.fixedDeltaTime))
                 {
                     target = boardingPoints[i];
-                    Debug.Log("Successful Boarding at time = " + t);
+                    Debug.Log(gameObject.name + ": Successful Boarding at time = " + t);
                     return;
                 }
                 else
@@ -211,29 +220,8 @@ public class Enemy : MonoBehaviour {
                     }
                 }
             }
-            /*
-            interceptPoint = trainEngine.PositionInTime(t);
-            // x/ time.fixedDeltaTime is the number of fixed updates there are in x seconds
-            currentDst = Vector3.Distance(transform.position, interceptPoint);
-            //Debug.Log(currentDst);
-            if (currentDst < moveSpeed * (t / Time.fixedDeltaTime))
-            {
-                // can make it to that point in time
-                target = interceptPoint;
-                Debug.Log("Successful intercept at time = "+t);
-                return;
-            }
-            else
-            {
-                if(currentDst < closestDst || closestDst == 0)
-                {
-                    // this one is the closest so use this if you don't find one better
-                    closestDst = currentDst;
-                    target = interceptPoint;
-                }
-            }
-            */
         }
+        Debug.Log(gameObject.name + ": Didn't find boarding; moving to closest");
     }
 
     /// <summary>
@@ -241,6 +229,7 @@ public class Enemy : MonoBehaviour {
     /// </summary>
     void ApproachTrain()
     {
+        // Warning: outdated
         Vector3 interceptPoint;
         float closestDst = 0;
         float currentDst = 0;
