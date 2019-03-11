@@ -62,7 +62,12 @@ public class MeleeWeapon : Weapon {
 
     void OnTriggerEnter(Collider col)
     {
-        Health h = col.gameObject.GetComponent<Health>();
+        // check the parent of the object
+        // trains have their colliders as child objects
+        // this may make the enemy not able to damage the player while the player is on the train
+        // the player's parent is the train so will the train take damage?
+        // the train is also the enemy's parent so will the player be able to hurt them or will theu just hurt the train?
+        Health h = col.gameObject.GetComponentInParent<Health>();
         if (h != null)
         {
             // hit something with hp

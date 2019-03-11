@@ -27,6 +27,8 @@ public class Enemy : MonoBehaviour {
     // list of all the targets the enemy could have (players, train cars)
     public GameObject[] allTargets;
     public Train trainEngine;
+    public event System.Action OnTrainBoarded;
+    bool onTrain = false;
 
     public Transform TargetMarker;
 
@@ -70,9 +72,26 @@ public class Enemy : MonoBehaviour {
             {
                 TargetMarker.position = targetObject.transform.position;
             }
+            /* raycasting instead. Works better for rectangular target objects. You hit their hitbox instead checking for their center
             if(Vector3.Distance(transform.position, targetObject.transform.position) < attackRange)
             {
                 Attack();
+            }
+            */
+            
+            // Train is on layer "Train"
+            // Player is on layer "Damageable"
+            // Is there a reason they should be different layers? I don't know if they should or shouldn't be
+            // When the enemy is chasing the player and the player puts the train in between them, the enemy fires a ray towards the player and hits the train
+            // so it attacks the train even though it's trying to find the player (and it can't path find yet so it just moves straight towards the player)
+            RaycastHit hit;
+            if(Physics.Raycast(transform.position, (targetObject.transform.position - transform.position).normalized, out hit, attackRange, LayerMask.GetMask("Train") | LayerMask.GetMask("Damageable")))
+            {
+                
+                if(hit.distance < attackRange)
+                {
+                    Attack();
+                }
             }
 
             if (canMove)
@@ -291,7 +310,16 @@ public class Enemy : MonoBehaviour {
                 transform.position = link.GetOnBoardPosition();
                 // stop moving
                 // otherwise the enemy will just try to jump off the train
-                canMove = false;
+                //canMove = false;
+                if(OnTrainBoarded != null)
+                {
+                    OnTrainBoarded();
+                }
+
+                onTrain = true;
+                targetObject = trainEngine.gameObject;
+                targetFound = true;
+                FindTarget();
             }
             else
             {
