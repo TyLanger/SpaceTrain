@@ -23,9 +23,9 @@ public class Triangle {
         TriangleSetup(a, b, c);
     }
 
-    public Triangle(Vector3 a, Vector3 b, Vector3 c)
+    public Triangle(Vector3 a, Vector3 b, Vector3 c, int aIndex, int bIndex, int cIndex)
     {
-        TriangleSetup(new Vertex(a), new Vertex(b), new Vertex(c));
+        TriangleSetup(new Vertex(a, aIndex), new Vertex(b, bIndex), new Vertex(c, cIndex));
     }
 
     public Triangle(HalfEdge halfEdge)

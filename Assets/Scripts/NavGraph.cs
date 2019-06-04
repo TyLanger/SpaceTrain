@@ -17,8 +17,10 @@ public class NavGraph : MonoBehaviour {
 
     Node[] nodes;
     List<Triangle> listOfTris;
+    int[] trianglesByPointIndex;
 
     public int triNumber = 0;
+    public int nodeNumber = 0;
 
     void Start()
     {
@@ -30,14 +32,140 @@ public class NavGraph : MonoBehaviour {
     {
         // concave triangulation
         List<Vector3> pointList = new List<Vector3>();
+        nodes = new Node[points.Length];
+        /*
+        for (int i = 0; i < nodes.Length; i++)
+        {
+            nodes[i] = new Node(points[i]);
+        }*/
+
         for (int i = 0; i < points.Length; i++)
         {
             // reverse the list so the points are counter clockwise
             pointList.Add(points[points.Length - i - 1].position);
             
         }
+        for (int i = 0; i < points.Length/2; i++)
+        {
+            // reverse the points array so the points are counter clockwise
+            // so that the indecies for the vertices match up
+            Transform temp = points[i];
+            points[i] = points[points.Length - i - 1];
+            points[points.Length - i - 1] = temp;
+        }
         listOfTris = TriangulateConcavePolygon(pointList);
         listOfTris = TriangulateByFlippingEdges(listOfTris);
+
+        // turn the triangles into nodes that keep track of their neighbours
+        nodes = CreateNodes(listOfTris, points.Length+1);
+    }
+
+    Node[] CreateNodes(List<Triangle> tris, int size)
+    {
+        Node[] nodeArray = new Node[size];
+
+        // iterate through the triangles
+        // check the vertices for new points
+        // if a new point is found, add it to the nodeArray
+
+        // nodes need transforms. Vertices have just positions
+        // need to use the index field of the vertices and use that to map it to its original transform
+
+        for (int i = 0; i < tris.Count; i++)
+        {
+            // find the index of the vertex
+            // this index maps to which transform the index points to
+            // these indices will also be used to store the nodes. The new nodes will be in the same index as the transform it points to
+            int aIndex = tris[i].v1.index;
+            int bIndex = tris[i].v2.index;
+            int cIndex = tris[i].v3.index;
+
+            // use the already created nodes
+            Node a = nodeArray[aIndex];
+            Node b = nodeArray[bIndex];
+            Node c = nodeArray[cIndex];
+
+            // can check to see if a node has been evaluated
+            // if it is in its spot, it has been evaluated, otherwise it hasn't
+            bool aEvaluated = nodeArray[aIndex] != null;
+            bool bEvaluated = nodeArray[bIndex] != null;
+            bool cEvaluated = nodeArray[cIndex] != null;
+
+            // if nodes do not exist yet, create them
+            if(a == null)
+            {
+                a = new Node(points[aIndex]);
+            }
+            if(b == null)
+            {
+                b = new Node(points[bIndex]);
+            }
+            if(c == null)
+            {
+                c = new Node(points[cIndex]);
+            }
+
+            // assign neighbours
+            if (!aEvaluated)
+            {
+                // a is new
+
+                // add the others as neighbours
+                a.AddNeighbour(b);
+                a.AddNeighbour(c);
+
+                nodeArray[aIndex] = a;
+
+                // check if the other 2 are new
+                if(bEvaluated)
+                {
+                    // b is not new so it's not going to add neighbours itself
+                    // add this new node to its neighbours
+                    // if it were new, it would add neighbours itself and add itself to the evaluated set
+                    b.AddNeighbour(a);
+                }
+                if(cEvaluated)
+                {
+                    c.AddNeighbour(a);
+                }
+            }
+
+            if (!bEvaluated)
+            {
+                b.AddNeighbour(a);
+                b.AddNeighbour(c);
+
+                nodeArray[bIndex] = b;
+
+                if (aEvaluated)
+                {
+                    a.AddNeighbour(b);
+                }
+                if(cEvaluated)
+                {
+                    c.AddNeighbour(b);
+                }
+            }
+
+            if (!cEvaluated)
+            {
+                c.AddNeighbour(a);
+                c.AddNeighbour(b);
+
+                nodeArray[cIndex] = c;
+
+                if (aEvaluated)
+                {
+                    a.AddNeighbour(c);
+                }
+                if(bEvaluated)
+                {
+                    b.AddNeighbour(c);
+                }
+            }
+        }
+
+        return nodeArray;
     }
 
     public static List<Triangle> TriangulateConcavePolygon(List<Vector3> points)
@@ -47,7 +175,7 @@ public class NavGraph : MonoBehaviour {
         // if only 3 points, already have triangulated it
         if(points.Count == 3)
         {
-            triangles.Add(new Triangle(points[0], points[1], points[2]));
+            triangles.Add(new Triangle(points[0], points[1], points[2], 0, 1, 2));
             return triangles;
         }
 
@@ -56,7 +184,7 @@ public class NavGraph : MonoBehaviour {
 
         for (int i = 0; i < points.Count; i++)
         {
-            vertices.Add(new Vertex(points[i]));
+            vertices.Add(new Vertex(points[i], i));
         }
 
         // find the next and previous vertex
@@ -467,9 +595,115 @@ public class NavGraph : MonoBehaviour {
         t2.halfEdge = four;
     }
 
-    Transform[] FindPath()
+    public Transform[] FindPath(Transform start, Transform end)
     {
-        
+        // end point as transform because it will move over time 
+        // end point is most likely going to be a specific train car or a player
+        // start point can be a vector probably because it won't move before the path is calculated
+
+        // this should probably just be in a generic IsWalkable() method
+        bool startOnGraph = false;
+        bool endOnGraph = false;
+        // check if start and end points are pathable by this graph
+        for (int i = 0; i < listOfTris.Count; i++)
+        {
+            Triangle t = listOfTris[i];
+            // if you haven't found if the point is on the graph yet, keep checking
+            // once you've found it (startOnGraph == true), don't need to check each tri anymore
+            if(!startOnGraph && t.IsPointInTriangle(t, start.position))
+            {
+                startOnGraph = true;
+            }
+            // finding the start and end are independant. Once you find one, you can quit searching for it
+            // but you still need to keep searching for the other
+            if (!endOnGraph && t.IsPointInTriangle(t, end.position))
+            {
+                endOnGraph = true;
+            }
+            // both points exist on graph
+            // can stop checking
+            if(startOnGraph && endOnGraph)
+            {
+                break;
+            }
+        }
+
+        if(!startOnGraph || !endOnGraph)
+        {
+            Debug.Log("Start point not traversable");
+            return null;
+        }
+
+        // calculate the path with A*
+
+        // don't make new nodes
+        // should already have a lsit of the nodes with all of their information filled in
+        // like neighbours and distances between neighbours
+        Node startNode = new Node(start);
+        Node goalNode = new Node(end);
+
+
+        // nodes already evaluated
+        // store them here so you know not to evaluate them again
+        HashSet<Node> closedSet = new HashSet<Node>();
+
+        // discovered, but not evaluated yet
+        // heap structure sorts them beased on g and h scores
+        Heap<Node> openSet = new Heap<Node>(listOfTris.Count);
+
+        openSet.Add(startNode);
+
+        while(openSet.Count > 0)
+        {
+            // current node is the node with the lowest fScore
+            // because the openSet heap is sorted, it is the first item
+            Node current = openSet.ReturnFirst();
+
+            // add it to the closed set because it is evaluated
+            closedSet.Add(current);
+            
+            if(current == goalNode)
+            {
+                return ReconstructPath(startNode, current);
+            }
+
+            // loop through current's neighbours
+            foreach (Node neighbour in current.GetNeighbours())
+            {
+                if(closedSet.Contains(neighbour))
+                {
+                    // this neighbour has already been evaluated
+                    continue;
+                }
+
+                int tentative_gScore = current.gCost + CostBetween(current, neighbour);
+                if(tentative_gScore < neighbour.gCost || !openSet.Contains(neighbour))
+                {
+                    // if you found a better path for this neighbour
+                    // or the neighbour isn't already in the openSet
+                    // update all this info for the neighbour
+                    neighbour.gCost = tentative_gScore;
+                    neighbour.hCost = CostBetween(neighbour, goalNode);
+                    neighbour.cameFrom = current;
+
+                    // if they weren't in the open set, add them
+                    if(!openSet.Contains(neighbour))
+                    {
+                        openSet.Add(neighbour);
+                    }
+                    else
+                    {
+                        // if they were already in the open set
+                        // getting here means we found a new gScore that was better
+                        // update their position in the openSet
+                        openSet.UpdateItem(neighbour);
+                    }
+                }
+            }
+            Debug.Log("Astar failed");
+            return new Transform[0];
+        }
+
         return null;
     }
 
@@ -477,6 +711,33 @@ public class NavGraph : MonoBehaviour {
     {
         // return local coordinates for points
         return null;
+    }
+
+    int CostBetween(Node start, Node end)
+    {
+        // guess at what the distance should be
+        // ideally, the distance should be Vector3.Distance(start.transform.position, end.transform.position)
+        return 0;
+    }
+
+    Transform[] ReconstructPath(Node start, Node current)
+    {
+        List<Transform> path = new List<Transform>();
+
+        while(current != start)
+        {
+            path.Add(current.transform);
+            current = current.cameFrom;
+        }
+        path.Reverse();
+        
+        // convert list to array
+        Transform[] pathArray = new Transform[path.Count];
+        for (int i = 0; i < path.Count; i++)
+        {
+            pathArray[i] = path[i];
+        }
+        return pathArray;
     }
 
     void OnDrawGizmos()
@@ -507,7 +768,7 @@ public class NavGraph : MonoBehaviour {
                 Gizmos.DrawLine(c, a);
 
             }
-            if (triNumber < listOfTris.Count)
+            if (triNumber >= 0 && triNumber < listOfTris.Count)
             {
                 Gizmos.color = Color.blue;
                 Vector3 a = listOfTris[triNumber].v1.position;
@@ -523,30 +784,103 @@ public class NavGraph : MonoBehaviour {
                 //Gizmos.DrawLine(c, a);
             }
         }
+        if(nodes != null)
+        {
+            if(nodeNumber >= 0 && nodeNumber < nodes.Length)
+            {
+                Node n = nodes[nodeNumber];
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(n.transform.position, 0.2f);
+
+                foreach (Node neighbour in n.GetNeighbours())
+                {
+                    Gizmos.DrawWireSphere(neighbour.transform.position, 0.2f);
+
+                    Gizmos.DrawLine(n.transform.position, neighbour.transform.position);
+                }
+            }
+        }
     }
 
-    public class Node
+    
+}
+
+public class Node : IHeapItem<Node>
+{
+    Node[] neighbours;
+    // keep track of your neighbours and the distance from them
+    // also keep track of if the distance is variable and might need to be calculated again
+    Dictionary<Node, Edge> neighbourLinks;
+    public Transform transform;
+
+    public int gCost;
+    public int hCost;
+    public Node cameFrom;
+    int HeapIndex;
+
+    public Node(Transform trans)
     {
-        Node[] neighbours;
-        // keep track of your neighbours and the distance from them
-        // also keep track of if the distance is variable and might need to be calculated again
-        Dictionary<Node, Edge> neighbourLinks;
-        Transform position;
+        transform = trans;
+        neighbours = new Node[0];
+    }
 
-        public Node(Transform pos)
+    public int fCost
+    {
+        get
         {
-            position = pos;
+            return gCost + hCost;
         }
+    }
 
-        public void SetNeighbours(Node[] n)
+    public int heapIndex
+    {
+        get
         {
-            neighbours = n;
+            return HeapIndex;
         }
+        set
+        {
+            HeapIndex = value;
+        }
+    }
 
-        struct Edge
+    public void AddNeighbour(Node n)
+    {
+        System.Array.Resize<Node>(ref neighbours, neighbours.Length + 1);
+        neighbours[neighbours.Length - 1] = n;
+        /*
+        // make the neighbours array longer and add the new one to it
+        Node[] newNeighbours = new Node[neighbours.Length + 1];
+        if (neighbours.Length > 0)
         {
-            float distance;
-            bool variableDst;
+            for (int i = 0; i < neighbours.Length; i++)
+            {
+                newNeighbours[i] = neighbours[i];
+            }
         }
+        newNeighbours[newNeighbours.Length - 1] = n;
+        neighbours = newNeighbours;
+        */
+    }
+
+    public void SetNeighbours(Node[] n)
+    {
+        neighbours = n;
+    }
+
+    public Node[] GetNeighbours()
+    {
+        return neighbours;
+    }
+
+    struct Edge
+    {
+        float distance;
+        bool variableDst;
+    }
+
+    public int CompareTo(Node node)
+    {
+        return 0;
     }
 }

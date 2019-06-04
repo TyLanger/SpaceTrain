@@ -19,11 +19,11 @@ public class Edge {
         v2 = b;
     }
 
-    public Edge(Vector3 a, Vector3 b)
+    /*public Edge(Vector3 a, Vector3 b)
     {
         v1 = new Vertex(a);
         v2 = new Vertex(b);
-    }
+    }*/
 
     public Vector2 GetVertex2D(Vertex v)
     {

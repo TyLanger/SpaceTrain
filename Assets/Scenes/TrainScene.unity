@@ -2164,6 +2164,7 @@ MonoBehaviour:
   - {fileID: 1813831095}
   - {fileID: 998740277}
   triNumber: 0
+  nodeNumber: 2
 --- !u!1 &521671479
 GameObject:
   m_ObjectHideFlags: 0
@@ -4937,6 +4938,7 @@ MonoBehaviour:
   - {fileID: 1613211346}
   - {fileID: 1644061996}
   triNumber: 0
+  nodeNumber: 0
 --- !u!1001 &2011894425
 Prefab:
   m_ObjectHideFlags: 0
