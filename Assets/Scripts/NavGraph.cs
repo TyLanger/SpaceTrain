@@ -22,10 +22,18 @@ public class NavGraph : MonoBehaviour {
     public int triNumber = 0;
     public int nodeNumber = 0;
 
+    public int pathStartNode = 0;
+    public int pathEndNode = 1;
+    public Transform[] testPath;
+
     void Start()
     {
         
         CreateGraph();
+        if((pathStartNode >= 0 && pathStartNode < nodes.Length) && (pathEndNode >= 0 && pathEndNode < nodes.Length))
+        {
+            testPath = FindPath(nodes[pathStartNode].transform, nodes[pathEndNode].transform);
+        }
     }
 
     void CreateGraph()
@@ -95,74 +103,26 @@ public class NavGraph : MonoBehaviour {
             if(a == null)
             {
                 a = new Node(points[aIndex]);
+                nodeArray[aIndex] = a;
             }
             if(b == null)
             {
                 b = new Node(points[bIndex]);
+                nodeArray[bIndex] = b;
             }
             if(c == null)
             {
                 c = new Node(points[cIndex]);
-            }
-
-            // assign neighbours
-            if (!aEvaluated)
-            {
-                // a is new
-
-                // add the others as neighbours
-                a.AddNeighbour(b);
-                a.AddNeighbour(c);
-
-                nodeArray[aIndex] = a;
-
-                // check if the other 2 are new
-                if(bEvaluated)
-                {
-                    // b is not new so it's not going to add neighbours itself
-                    // add this new node to its neighbours
-                    // if it were new, it would add neighbours itself and add itself to the evaluated set
-                    b.AddNeighbour(a);
-                }
-                if(cEvaluated)
-                {
-                    c.AddNeighbour(a);
-                }
-            }
-
-            if (!bEvaluated)
-            {
-                b.AddNeighbour(a);
-                b.AddNeighbour(c);
-
-                nodeArray[bIndex] = b;
-
-                if (aEvaluated)
-                {
-                    a.AddNeighbour(b);
-                }
-                if(cEvaluated)
-                {
-                    c.AddNeighbour(b);
-                }
-            }
-
-            if (!cEvaluated)
-            {
-                c.AddNeighbour(a);
-                c.AddNeighbour(b);
-
                 nodeArray[cIndex] = c;
-
-                if (aEvaluated)
-                {
-                    a.AddNeighbour(c);
-                }
-                if(bEvaluated)
-                {
-                    b.AddNeighbour(c);
-                }
             }
+
+            // add all neighbour combinations
+            // AddNeighbours() will check for duplicates and not add duplicates
+
+            a.AddNeighbours(b, c);
+            b.AddNeighbours(a, c);
+            c.AddNeighbours(a, b);
+
         }
 
         return nodeArray;
@@ -595,6 +555,50 @@ public class NavGraph : MonoBehaviour {
         t2.halfEdge = four;
     }
 
+    Node GetClosestNode(Transform trans)
+    {
+        // not technically closest
+        // only returns vertices from the triangle the position is inside of
+        // it is possible that the closest node belongs to a different nearby triangle
+        // I'm hoping the delaunay triangulation eliminates most or all of those scenarios
+        // or, failing that, that it doesn't really matter
+
+        // make sure there are triangles and nodes. Otherwise this is meaningless
+        if (listOfTris != null && nodes != null)
+        {
+            Vector3 pos = trans.position;
+            foreach (Triangle t in listOfTris)
+            {
+                if (t.IsPointInTriangle(t, pos))
+                {
+                    // inside triangle
+                    //calculate the distances to the vertices of the triangle
+                    float distV1 = Vector3.Distance(t.v1.position, pos);
+                    float distV2 = Vector3.Distance(t.v2.position, pos);
+                    float distV3 = Vector3.Distance(t.v3.position, pos);
+
+                    if (distV1 <= distV2 && distV1 <= distV3)
+                    {
+                        // v1 is closest
+                        return nodes[t.v1.index];
+                    }
+                    else if (distV2 <= distV1 && distV2 <= distV3)
+                    {
+                        // v2 is closest
+                        return nodes[t.v2.index];
+                    }
+                    else
+                    {
+                        // v3 is closest
+                        return nodes[t.v3.index];
+                    }
+                }
+            }
+        }
+        // position not inside any of the triangles
+        return null;
+    }
+
     public Transform[] FindPath(Transform start, Transform end)
     {
         // end point as transform because it will move over time 
@@ -630,18 +634,26 @@ public class NavGraph : MonoBehaviour {
 
         if(!startOnGraph || !endOnGraph)
         {
-            Debug.Log("Start point not traversable");
+            Debug.Log("Start or end point not traversable. "+startOnGraph+endOnGraph);
             return null;
         }
 
         // calculate the path with A*
 
-        // don't make new nodes
-        // should already have a lsit of the nodes with all of their information filled in
-        // like neighbours and distances between neighbours
-        Node startNode = new Node(start);
-        Node goalNode = new Node(end);
-
+        // find the node that is closest to the position
+        Node startNode = GetClosestNode(start);
+        if(startNode == null)
+        {
+            Debug.Log("Start null");
+        }
+        // Really want to just end when you reach the triangle the destination is in
+        // don't really care about getting to the nearest vertex
+        // this still is probably the best way to do it.
+        Node goalNode = GetClosestNode(end);
+        if(goalNode == null)
+        {
+            Debug.Log("Goal null");
+        }
 
         // nodes already evaluated
         // store them here so you know not to evaluate them again
@@ -670,6 +682,7 @@ public class NavGraph : MonoBehaviour {
             // loop through current's neighbours
             foreach (Node neighbour in current.GetNeighbours())
             {
+                //Debug.Log("Neighbour: " + neighbour.transform);
                 if(closedSet.Contains(neighbour))
                 {
                     // this neighbour has already been evaluated
@@ -700,10 +713,10 @@ public class NavGraph : MonoBehaviour {
                     }
                 }
             }
-            Debug.Log("Astar failed");
-            return new Transform[0];
+            
         }
-
+        Debug.Log("Astar failed. closedset count: "+closedSet.Count);
+        //return new Transform[0];
         return null;
     }
 
@@ -717,13 +730,18 @@ public class NavGraph : MonoBehaviour {
     {
         // guess at what the distance should be
         // ideally, the distance should be Vector3.Distance(start.transform.position, end.transform.position)
-        return 0;
+        // needs to accomodate nodes that aren't neighbours
+        //return (int)start.GetDistBetween(end);
+
+        return (int)Vector3.Distance(start.transform.position, end.transform.position);
     }
 
     Transform[] ReconstructPath(Node start, Node current)
     {
         List<Transform> path = new List<Transform>();
 
+        // ignores the start point
+        // don't need the first item of the list of places to go to include where you currently are
         while(current != start)
         {
             path.Add(current.transform);
@@ -800,6 +818,14 @@ public class NavGraph : MonoBehaviour {
                 }
             }
         }
+        if(testPath != null)
+        {
+            Gizmos.color = Color.blue;
+            for (int i = 0; i < testPath.Length-1; i++)
+            {
+                Gizmos.DrawLine(testPath[i].position, testPath[i + 1].position);
+            }
+        }
     }
 
     
@@ -822,6 +848,7 @@ public class Node : IHeapItem<Node>
     {
         transform = trans;
         neighbours = new Node[0];
+        neighbourLinks = new Dictionary<Node, Edge>();
     }
 
     public int fCost
@@ -861,6 +888,63 @@ public class Node : IHeapItem<Node>
         newNeighbours[newNeighbours.Length - 1] = n;
         neighbours = newNeighbours;
         */
+
+        // precalculate the distances between neighbours
+        // this may not really be necessary
+        // need to also calculate distance between a node and the goal node
+        // so precalculating distances doesn't help there
+        // could still be useful for ordering neighbours. If you need to find the closest neighbour
+        Edge e = new Edge
+        {
+            distance = Vector3.Distance(transform.position, n.transform.position)
+        };
+        neighbourLinks.Add(n, e);
+    }
+
+    public void AddNeighbours(Node n1, Node n2)
+    {
+        // commonly adding 2 neighbours at a time
+        int newNeighbours = 0;
+        bool n1New = false;
+        bool n2New = false;
+        if (!neighbourLinks.ContainsKey(n1))
+        {
+            // n1 is not already a neighbour
+            newNeighbours++;
+            n1New = true;
+            neighbourLinks.Add(n1, new Edge
+            {
+                distance = Vector3.Distance(transform.position, n1.transform.position)
+            });
+        }
+        if (!neighbourLinks.ContainsKey(n2))
+        {
+            newNeighbours++;
+            n2New = true;
+            neighbourLinks.Add(n2, new Edge
+            {
+                distance = Vector3.Distance(transform.position, n2.transform.position)
+            });
+        }
+        if (newNeighbours > 0)
+        {
+            // instead of tracking the int, could have used
+            // n1New?1:0 + n2New?1:0
+            System.Array.Resize<Node>(ref neighbours, neighbours.Length + newNeighbours);
+        }
+        // using these bools so I only have to resize the array once. 
+        // seems like doing that twice would be more expensive than having the extra bool flags.
+        if(n1New)
+        {
+            // if newNeighbours == 2, both need to be added. Add this 2 from the end
+            // if newNeighbours == 1, only this needs to be added. Add it to the end
+            neighbours[neighbours.Length - newNeighbours] = n1;
+        }
+        if (n2New)
+        {
+            // this can always be added to the end. If n1 needed to be added, it was added before
+            neighbours[neighbours.Length - 1] = n2;
+        }
     }
 
     public void SetNeighbours(Node[] n)
@@ -873,14 +957,33 @@ public class Node : IHeapItem<Node>
         return neighbours;
     }
 
+    public float GetDistBetween(Node n)
+    {
+        // find the node in the dict and return the distance
+        return neighbourLinks[n].distance;
+    }
+
     struct Edge
     {
-        float distance;
-        bool variableDst;
+        public float distance;
+        public bool variableDst;
     }
 
     public int CompareTo(Node node)
     {
-        return 0;
+        // first compare fCosts of nodes
+        int compare = fCost.CompareTo(node.fCost);
+
+        // if fCosts are equal,
+        // compare hCosts
+        if(compare == 0)
+        {
+            compare = hCost.CompareTo(node.hCost);
+        }
+
+        // base int.compareTo() is based on larger ints having priority
+        // in this case, we want lower costs to have higher priority
+        // so negate the comparison
+        return -compare;
     }
 }

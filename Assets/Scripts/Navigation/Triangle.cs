@@ -231,7 +231,10 @@ public class Triangle {
         float u = (dot11 * dot02 - dot01 * dot12) * inverseDenom;
         float v = (dot00 * dot12 - dot01 * dot02) * inverseDenom;
 
-        isWithinTriangle = (u >= 0) && (v >= 0) && (u + v < 1);
+        // with (u+v == 1), the point is one of the vertices of the triangle
+        // I want that to be considered inside the triangle
+        // also in the < implementation, one of the points counts as inside the triangle, but the other 2 do not
+        isWithinTriangle = (u >= 0) && (v >= 0) && (u + v <= 1);
 
         return isWithinTriangle;
     }
