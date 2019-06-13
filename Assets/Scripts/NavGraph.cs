@@ -14,6 +14,7 @@ public class NavGraph : MonoBehaviour {
     // assign some points for the bounds of the graph
     public Transform[] points;
     // TODO find/create points automatically
+    public Transform[] innerPoints;
 
     Node[] nodes;
     List<Triangle> listOfTris;
@@ -41,6 +42,7 @@ public class NavGraph : MonoBehaviour {
         // concave triangulation
         List<Vector3> pointList = new List<Vector3>();
         nodes = new Node[points.Length];
+        List<Vector3> innerPointsList = new List<Vector3>();
         /*
         for (int i = 0; i < nodes.Length; i++)
         {
@@ -61,11 +63,36 @@ public class NavGraph : MonoBehaviour {
             points[i] = points[points.Length - i - 1];
             points[points.Length - i - 1] = temp;
         }
+        for (int i = 0; i < innerPoints.Length; i++)
+        {
+            innerPointsList.Add(innerPoints[i].position);
+        }
+
         listOfTris = TriangulateConcavePolygon(pointList);
+        if (innerPoints.Length > 0)
+        {
+            listOfTris = TriangulateInner(innerPointsList, listOfTris, pointList.Count);
+            // combine the array of outer points and inner points
+            // nodes use the index to find the corresponding transform
+            // so neeed it in one array
+            //points += innerPoints
+            Transform[] allPoints = new Transform[points.Length + innerPoints.Length];
+            for (int i = 0; i < points.Length; i++)
+            {
+                allPoints[i] = points[i];
+            }
+            for (int i = 0; i < innerPoints.Length; i++)
+            {
+                allPoints[points.Length + i] = innerPoints[i];
+            }
+
+            points = allPoints;
+        }
         listOfTris = TriangulateByFlippingEdges(listOfTris);
 
         // turn the triangles into nodes that keep track of their neighbours
-        nodes = CreateNodes(listOfTris, points.Length+1);
+        nodes = CreateNodes(listOfTris, points.Length);
+       
     }
 
     Node[] CreateNodes(List<Triangle> tris, int size)
@@ -88,6 +115,8 @@ public class NavGraph : MonoBehaviour {
             int bIndex = tris[i].v2.index;
             int cIndex = tris[i].v3.index;
 
+            //Debug.Log(string.Format("aIndex: {0}, bIndex: {1}, cIndex: {2}", aIndex, bIndex, cIndex));
+
             // use the already created nodes
             Node a = nodeArray[aIndex];
             Node b = nodeArray[bIndex];
@@ -95,9 +124,9 @@ public class NavGraph : MonoBehaviour {
 
             // can check to see if a node has been evaluated
             // if it is in its spot, it has been evaluated, otherwise it hasn't
-            bool aEvaluated = nodeArray[aIndex] != null;
-            bool bEvaluated = nodeArray[bIndex] != null;
-            bool cEvaluated = nodeArray[cIndex] != null;
+            //bool aEvaluated = nodeArray[aIndex] != null;
+            //bool bEvaluated = nodeArray[bIndex] != null;
+            //bool cEvaluated = nodeArray[cIndex] != null;
 
             // if nodes do not exist yet, create them
             if(a == null)
@@ -123,6 +152,7 @@ public class NavGraph : MonoBehaviour {
             b.AddNeighbours(a, c);
             c.AddNeighbours(a, b);
 
+            
         }
 
         return nodeArray;
@@ -215,6 +245,40 @@ public class NavGraph : MonoBehaviour {
             IsVertexEar(earVertexNext, vertices, earVertices);
         }
 
+        return triangles;
+    }
+
+    public static List<Triangle> TriangulateInner(List<Vector3> interiorPoints, List<Triangle> triangles, int currentIndex)
+    {
+        // given a list of triangles, "triangles" that determines a concave shape,
+        // add all points in interior points to the shape and triangulate the points as they're added.
+        for (int i = 0; i < interiorPoints.Count; i++)
+        {
+            // for each point to be inserted
+
+            // find which triangle it is inside of
+            for (int j = 0; j < triangles.Count; j++)
+            {
+                Triangle t = triangles[j];
+                if(t.IsPointInTriangle(t, interiorPoints[i]))
+                {
+                    // split the triangle into 3 new triangles
+                    Triangle t1 = new Triangle(t.v1.position, t.v2.position, interiorPoints[i], t.v1.index, t.v2.index, currentIndex + i);
+                    Triangle t2 = new Triangle(t.v2.position, t.v3.position, interiorPoints[i], t.v2.index, t.v3.index, currentIndex + i);
+                    Triangle t3 = new Triangle(t.v3.position, t.v1.position, interiorPoints[i], t.v3.index, t.v1.index, currentIndex + i);
+
+                    triangles.Remove(t);
+
+                    triangles.Add(t1);
+                    triangles.Add(t2);
+                    triangles.Add(t3);
+
+                    // found the triangle this point is inside of
+                    // can stop looking now and move on to the next point
+                    break;
+                }
+            }
+        }
         return triangles;
     }
 

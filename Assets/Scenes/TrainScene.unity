@@ -2156,13 +2156,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   points:
   - {fileID: 1947174053}
-  - {fileID: 641756674}
-  - {fileID: 566838590}
   - {fileID: 1231292357}
   - {fileID: 724749441}
+  - {fileID: 998740277}
+  innerPoints:
+  - {fileID: 641756674}
+  - {fileID: 566838590}
   - {fileID: 406781612}
   - {fileID: 1813831095}
-  - {fileID: 998740277}
   triNumber: -1
   nodeNumber: 2
   pathStartNode: 0
@@ -4902,7 +4903,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1959860589
 Transform:
   m_ObjectHideFlags: 0
@@ -4944,6 +4945,7 @@ MonoBehaviour:
   - {fileID: 521671480}
   - {fileID: 1613211346}
   - {fileID: 1644061996}
+  innerPoints: []
   triNumber: -1
   nodeNumber: 1
   pathStartNode: 1
