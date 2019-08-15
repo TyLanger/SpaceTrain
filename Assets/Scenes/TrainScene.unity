@@ -2164,8 +2164,9 @@ MonoBehaviour:
   - {fileID: 566838590}
   - {fileID: 406781612}
   - {fileID: 1813831095}
+  destroyInner: 1
   triNumber: -1
-  nodeNumber: 2
+  nodeNumber: 0
   pathStartNode: 0
   pathEndNode: 1
   testPath: []
@@ -3490,7 +3491,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 38a577734a4b7a34595ec40eea853955, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 38a577734a4b7a34595ec40eea853955, type: 3}
@@ -4946,6 +4947,7 @@ MonoBehaviour:
   - {fileID: 1613211346}
   - {fileID: 1644061996}
   innerPoints: []
+  destroyInner: 1
   triNumber: -1
   nodeNumber: 1
   pathStartNode: 1

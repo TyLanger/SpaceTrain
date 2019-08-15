@@ -15,6 +15,7 @@ public class NavGraph : MonoBehaviour {
     public Transform[] points;
     // TODO find/create points automatically
     public Transform[] innerPoints;
+    public bool destroyInner = true;
 
     Node[] nodes;
     List<Triangle> listOfTris;
@@ -33,7 +34,13 @@ public class NavGraph : MonoBehaviour {
         CreateGraph();
         if((pathStartNode >= 0 && pathStartNode < nodes.Length) && (pathEndNode >= 0 && pathEndNode < nodes.Length))
         {
-            testPath = FindPath(nodes[pathStartNode].transform, nodes[pathEndNode].transform);
+            Transform[] tempPath = FindPath(nodes[pathStartNode].transform, nodes[pathEndNode].transform);
+            testPath = new Transform[tempPath.Length + 1];
+            testPath[0] = nodes[pathStartNode].transform;
+            for (int i = 0; i < tempPath.Length; i++)
+            {
+                testPath[i + 1] = tempPath[i];
+            }
         }
     }
 
@@ -90,9 +97,570 @@ public class NavGraph : MonoBehaviour {
         }
         listOfTris = TriangulateByFlippingEdges(listOfTris);
 
+        // constrained delaunay
+        // assume inner points are the constraining points
+        if (destroyInner)
+        {
+            listOfTris = AddConstraints(listOfTris, innerPointsList);
+        }
+
+
         // turn the triangles into nodes that keep track of their neighbours
         nodes = CreateNodes(listOfTris, points.Length);
        
+    }
+
+    List<Triangle> AddConstraints(List<Triangle> triangulation, List<Vector3> constraints)
+    {
+
+        for (int i = 0; i < constraints.Count; i++)
+        {
+            // create the constrained edges out of neighbouring vertices
+            Vector3 v1 = constraints[i];
+            // loop around if too high (i+1)%Count probably doesn't quite work
+            Vector3 v2 = constraints[(((i + 1) % constraints.Count) + constraints.Count) % constraints.Count];
+
+            // check if this edge already exists in the triangulation.
+            // if it does, we are good
+            if (IsEdgePartOfTriangulation(triangulation, v1, v2))
+            {
+                continue;
+            }
+
+            // Find all edges in the triangulation that intersect this constraining edge
+            List<HalfEdge> intersectingEdges = FindIntersectingEdges(triangulation, v1, v2);
+
+            // remove these intersecting edges by adding new edges
+            List<HalfEdge> newEdges = RemoveIntersectingEdges(v1, v2, intersectingEdges);
+
+            // Restore delaunay triangulation
+            RestoreDelaunayTriangulation(v1, v2, newEdges);
+        }
+
+        // remove the interior triangles
+
+
+        RemoveSuperfluousTriangles(triangulation, constraints);
+
+
+        return triangulation;
+    }
+
+    // is an edge between p1-p2 a part of an edge in the triangulation?
+    bool IsEdgePartOfTriangulation(List<Triangle> triangulation, Vector3 p1, Vector3 p2)
+    {
+        for (int i = 0; i < triangulation.Count; i++)
+        {
+            // the vertices positions of the current triangle
+            Vector3 tp1 = triangulation[i].v1.position;
+            Vector3 tp2 = triangulation[i].v2.position;
+            Vector3 tp3 = triangulation[i].v3.position;
+
+            // check if any of the triangle's edges ahve the same coordinates as the constrained edge
+            // we have no idea about directio so we have to check both directions
+            if ((tp1 == p1 && tp2 == p2) || (tp1 == p2 && tp2 == p1))
+            {
+                return true;
+            }
+            if ((tp2 == p1 && tp3 == p2) || (tp2 == p2 && tp3 == p1))
+            {
+                return true;
+            }
+            if ((tp3 == p1 && tp1 == p2) || (tp3 == p2 && tp1 == p1))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // find all edges of the current triangulation that intersects with the constraint edge between p1 and p2
+    List<HalfEdge> FindIntersectingEdges(List<Triangle> triangulation, Vector3 p1, Vector3 p2)
+    {
+        List<HalfEdge> intersectingEdges = new List<HalfEdge>();
+
+        // 
+
+        // begin at a triangle connected to the first vertex in the constraint edge
+        Triangle t = null;
+
+        for (int i = 0; i < triangulation.Count; i++)
+        {
+            HalfEdge e1 = triangulation[i].halfEdge;
+            HalfEdge e2 = e1.nextEdge;
+            HalfEdge e3 = e2.nextEdge;
+
+            // does one of these edges include the first vertex in the constraint edge?
+            if(e1.v.position == p1 || e2.v.position == p1 || e3.v.position == p1)
+            {
+                t = triangulation[i];
+
+                break;
+            }
+        }
+
+        // walk around p1 until we find a triangle with an edge that intersects with the edge p1-p2
+        int safety = 0;
+
+        // this is the last edge on the previous triangle we crossed so we know which way to rotate
+        HalfEdge lastEdge = null;
+
+        // when we rotate, we might pick the wrong start direction if the edge is on the border,
+        // so we can't rotate all the way around
+        // if that happens, we have to restart and rotate the other way
+        Triangle startTriangle = t;
+
+        bool restart = false;
+
+        while (true)
+        {
+            safety++;
+
+            if (safety > 10000)
+            {
+                Debug.Log("Stuck in an infinite loop when finding the start triangle when finding intersecting edges");
+
+                break;
+            }
+
+            // check if the current triangle is intersecting with the constraint
+            HalfEdge e1 = t.halfEdge;
+            HalfEdge e2 = e1.nextEdge;
+            HalfEdge e3 = e2.nextEdge;
+
+            // the only edge that can intersect with the constraint is the edge that doesn't include p1, so find it
+            HalfEdge eDoesntIncludeP1 = null;
+
+            if (e1.v.position != p1 && e1.prevEdge.v.position != p1)
+            {
+                eDoesntIncludeP1 = e1;
+            }
+            else if (e2.v.position != p1 && e2.prevEdge.v.position != p1)
+            {
+                eDoesntIncludeP1 = e2;
+            }
+            else
+            {
+                eDoesntIncludeP1 = e3;
+            }
+
+            // is the edge that doesn't include p1 intersect with the constrained edge?
+            if(Edge.AreLineSegmentsIntersecting(eDoesntIncludeP1.v.position, eDoesntIncludeP1.prevEdge.v.position, p1, p2))
+            {
+                // we have found the triangle where we should begin the walk
+                break;
+            }
+
+            // we have not found the triangle where we should begin the walk, so we should rotate to another triangle which includes p1
+
+            // find the two edges that include p1 so we can rotate across one of them
+            List<HalfEdge> includesP1 = new List<HalfEdge>();
+
+            if(e1 != eDoesntIncludeP1)
+            {
+                includesP1.Add(e1);
+            }
+            if (e2 != eDoesntIncludeP1)
+            {
+                includesP1.Add(e2);
+            }
+            if (e3 != eDoesntIncludeP1)
+            {
+                includesP1.Add(e3);
+            }
+
+            // this is the first rotation we do from the triangle we found at the start, so we rotate in a direction
+            if(lastEdge == null)
+            {
+                // but if we are on the border of the triangulationwe cant just pick a direction because
+                // one of the directions may not be valid and end up outside the triangulation
+                // this problem could be solved if we add a "supertriangle" covering all points
+
+                lastEdge = includesP1[0];
+
+                // dont go in this direction because then we are outside the triangulation
+                // sometimes we may have picked the wrong direction when we rotate from the first triangle
+                // and rotated around towards a triangle that's at the border, if so we have to restart and rotate
+                // in the other direction
+
+                if(lastEdge.oppositeEdge == null || restart)
+                {
+                    lastEdge = includesP1[1];
+                }
+
+                // trh triangle we rotate to
+                t = lastEdge.oppositeEdge.t;
+            }
+            else
+            {
+                // move in the direction that doesn't include the last edge
+                if(includesP1[0].oppositeEdge != lastEdge)
+                {
+                    lastEdge = includesP1[0];
+                }
+                else
+                {
+                    lastEdge = includesP1[1];
+                }
+
+                // if we have hit a border edge, we should have rotated in the other direction when we started at the first triangle
+                // so we have to jump bakc
+                if(lastEdge.oppositeEdge == null)
+                {
+                    restart = true;
+                    t = startTriangle;
+                    lastEdge = null;
+                }
+                else
+                {
+                    // the triangle we rotate to
+                    t = lastEdge.oppositeEdge.t;
+                }
+            }
+        }
+
+        // march from one triangle to the next in the direction of p2
+        // this means we always move across the edge of the triangle that intersects with the constraint
+        int safety2 = 0;
+
+        lastEdge = null;
+
+        while(true)
+        {
+            safety2++;
+
+            if(safety2 > 10000)
+            {
+                Debug.Log("STuck in an infinite loop when finding intersecting edges");
+
+                break;
+            }
+
+            // the three edges belonging to the current triangle
+            HalfEdge e1 = t.halfEdge;
+            HalfEdge e2 = e1.nextEdge;
+            HalfEdge e3 = e2.nextEdge;
+
+            // does this triangle include the last vertex on the constraint edge?
+            // if so, we have found all edges that intersect
+            if(e1.v.position == p2 || e2.v.position == p2 || e3.v.position == p2)
+            {
+                break;
+            }
+            // find which edge that intersects with the constraint
+            // more than one edge might intersect, so we have to check if it's not the edge we are coming from
+            else
+            {
+                // save the edge that intersects in case the triangle intersects with two edges
+                if(e1.oppositeEdge != lastEdge && Edge.AreLineSegmentsIntersecting(e1.v.position, e1.prevEdge.v.position, p1, p2))
+                {
+                    lastEdge = e1;
+                }
+                else if (e2.oppositeEdge != lastEdge && Edge.AreLineSegmentsIntersecting(e2.v.position, e2.prevEdge.v.position, p1, p2))
+                {
+                    lastEdge = e2;
+                }
+                else
+                {
+                    lastEdge = e3;
+                }
+
+                // jump to the next triangle by crossing the edge that intersects with the constraint
+                t = lastEdge.oppositeEdge.t;
+
+                // save the intersecting edge
+                intersectingEdges.Add(lastEdge);
+            }
+
+        }
+
+        return intersectingEdges;
+    }
+
+    List<HalfEdge> RemoveIntersectingEdges(Vector3 p1, Vector3 p2, List<HalfEdge> intersectingEdges)
+    {
+
+        List<HalfEdge> newEdges = new List<HalfEdge>();
+
+        int safety = 0;
+
+        // while some edges still cross the constrained edge, keep going
+        while(intersectingEdges.Count > 0)
+        {
+            safety++;
+
+            if(safety > 10000)
+            {
+                Debug.Log("Stuck in infinite loop when fixing constrained edges");
+
+                break;
+            }
+
+            // remove and edge from the list of edges that intersects the constrained edge
+            HalfEdge e = intersectingEdges[0];
+            intersectingEdges.RemoveAt(0);
+
+            // the vertices belonging to the two triangles
+            Vector2 vK = e.v.GetPos2D_XZ();
+            Vector2 vL = e.prevEdge.v.GetPos2D_XZ();
+            Vector2 vThirdPos = e.nextEdge.v.GetPos2D_XZ();
+            // the vert belonging to the opposite triangle and isn't shared by the current edge
+            Vector2 vOppPos = e.oppositeEdge.nextEdge.v.GetPos2D_XZ();
+
+            
+
+            // if the two triangles that share the edge vK and vL do not form a convex quadrilateral,
+            // then place the edge back on the list of intersecting edges
+
+            if(!IsQuadrilateralConvex(vK, vL, vThirdPos, vOppPos))
+            {
+                intersectingEdges.Add(e);
+                // add the edge back to the list
+                continue;
+            }
+            else
+            {
+                // flip the edge like we did when we created the delaunay triangulation so use that code
+                FlipEdge(e);
+
+                // the new diagonal is defined by the vertices
+                Vector3 vM = e.v.position;
+                Vector3 vN = e.prevEdge.v.position;
+
+                // if this new diagonal intersects the constrained edge, add it to the list of intersecting edges
+                // vK == e.v.position, vL == e.prevEdge.v.position
+                if(Edge.AreLineSegmentsIntersecting(vM, vN, e.v.position, e.prevEdge.v.position))
+                {
+                    intersectingEdges.Add(e);
+                }
+                // place it in the list of newly created edges
+                else
+                {
+                    newEdges.Add(e);
+                }
+            }
+        }
+
+        return newEdges;
+
+    }
+
+
+    // Try to restore the triangulation by flipping the newly created edges
+    // this process is similar to when we created the originalf triangulation
+    // this step can probably be skipped
+    void RestoreDelaunayTriangulation(Vector3 p1, Vector3 p2, List<HalfEdge> newEdges)
+    {
+
+    }
+
+    // remove all triangles inside of the contraint
+    // this assumes the vertices in the constraint are ordered clockwise
+    void RemoveSuperfluousTriangles(List<Triangle> triangulation, List<Vector3> constraints)
+    {
+        // this assumes we have at least 3 vertices in the constraint because we can't delete triangles inside a line
+        if(constraints.Count < 3)
+        {
+            return;
+        }
+
+        // start at a triangle with an edge that shares an edge with the first constraint edge in the list
+        // since both are clockwise, we know we are "inside" of the constraint, so we should delete this triangle
+        Triangle borderTriangle = null;
+
+        Vector3 constrainedP1 = constraints[0];
+        Vector3 constrainedP2 = constraints[1];
+
+        for (int i = 0; i < triangulation.Count; i++)
+        {
+            HalfEdge e1 = triangulation[i].halfEdge;
+            HalfEdge e2 = e1.nextEdge;
+            HalfEdge e3 = e2.nextEdge;
+
+            // is any of these edges a constraint?
+            if(e1.v.position == constrainedP2 && e1.prevEdge.v.position == constrainedP1)
+            {
+                borderTriangle = triangulation[i];
+                break;
+            }
+            if(e2.v.position == constrainedP2 && e2.prevEdge.v.position == constrainedP1)
+            {
+                borderTriangle = triangulation[i];
+                break;
+            }
+            if(e3.v.position == constrainedP2 && e3.prevEdge.v.position == constrainedP1)
+            {
+                borderTriangle = triangulation[i];
+                break;
+            }
+        }
+
+        if(borderTriangle == null)
+        {
+            return;
+        }
+
+        // find all triangles within the constraint by using a flood fill algorithm
+        // these triangles should be deleted
+        List<Triangle> trianglesToBeDeleted = new List<Triangle>();
+        List<Triangle> neighboursToCheck = new List<Triangle>();
+
+        // start at the triangle we know is within the constraints
+        neighboursToCheck.Add(borderTriangle);
+
+        int safety = 0;
+
+        while(true)
+        {
+            safety++;
+
+            if(safety > 10000)
+            {
+                Debug.Log("Stuck in infinite loop when deleting extra triangles");
+
+                break;
+            }
+
+            // stop if we are out of neighbours
+            if(neighboursToCheck.Count == 0)
+            {
+                break;
+            }
+
+            Triangle t = neighboursToCheck[0];
+            neighboursToCheck.RemoveAt(0);
+            trianglesToBeDeleted.Add(t);
+
+            HalfEdge e1 = t.halfEdge;
+            HalfEdge e2 = e1.nextEdge;
+            HalfEdge e3 = e2.nextEdge;
+
+            // if the neighbour is not an outer border, meaning no neighbour exists
+            // if we have not already visited the neighbour
+            // of the edge between the neighbour and this triangle is not a constraint
+            // then is's a valid neighbour and we should flood to it
+            if(
+                e1.oppositeEdge != null &&
+                !trianglesToBeDeleted.Contains(e1.oppositeEdge.t) &&
+                !neighboursToCheck.Contains(e1.oppositeEdge.t) &&
+                !IsAnEdgeAConstraint(e1.v.position, e1.prevEdge.v.position, constraints))
+            {
+                neighboursToCheck.Add(e1.oppositeEdge.t);
+            }
+            if (
+                e2.oppositeEdge != null &&
+                !trianglesToBeDeleted.Contains(e2.oppositeEdge.t) &&
+                !neighboursToCheck.Contains(e2.oppositeEdge.t) &&
+                !IsAnEdgeAConstraint(e2.v.position, e2.prevEdge.v.position, constraints))
+            {
+                neighboursToCheck.Add(e2.oppositeEdge.t);
+            }
+            if (
+                e3.oppositeEdge != null &&
+                !trianglesToBeDeleted.Contains(e3.oppositeEdge.t) &&
+                !neighboursToCheck.Contains(e3.oppositeEdge.t) &&
+                !IsAnEdgeAConstraint(e3.v.position, e3.prevEdge.v.position, constraints))
+            {
+                neighboursToCheck.Add(e3.oppositeEdge.t);
+            }
+
+        }
+
+        // delete the triangles
+        for (int i = 0; i < trianglesToBeDeleted.Count; i++)
+        {
+            Triangle t = trianglesToBeDeleted[i];
+
+            // remove from the list of all triangles
+            triangulation.Remove(t);
+
+            // in the half edge data structure there's an edge going in the opp direction
+            // on the other side of this triangle with a reference to this edge, so remove those
+            HalfEdge te1 = t.halfEdge;
+            HalfEdge te2 = te1.nextEdge;
+            HalfEdge te3 = te2.nextEdge;
+
+            if(te1.oppositeEdge != null)
+            {
+                te1.oppositeEdge.oppositeEdge = null;
+            }
+            if (te2.oppositeEdge != null)
+            {
+                te2.oppositeEdge.oppositeEdge = null;
+            }
+            if (te3.oppositeEdge != null)
+            {
+                te3.oppositeEdge.oppositeEdge = null;
+            }
+        }
+    }
+
+    // check if an edge is intersecting with the constraint edge between p1 and p2
+    // if so, add it to the list if the edge doesn't exist in the list
+    void TryAddEdgeToIntersectingEdges(HalfEdge e, Vector3 p1, Vector3 p2, List<HalfEdge> intersectingEdges)
+    {
+
+        // the position the edge is going to
+        Vector3 ep1 = e.v.position;
+        // the pos the edge is coming from
+        Vector3 ep2 = e.prevEdge.v.position;
+
+        // is this edge intersecting with the constraint?
+        if(IsEdgeCrossingEdge(ep1, ep2, p1, p2))
+        {
+            // add it to the list if it isn't already in the list
+            for (int i = 0; i < intersectingEdges.Count; i++)
+            {
+                // in the half edge data structure, there's another edge on the opp side going in the other direction
+                // so we have to check both because we want unique edges
+                if(intersectingEdges[i] == e || intersectingEdges[i].oppositeEdge == e)
+                {
+                    // the edge is already in the list
+                    return;
+                }
+            }
+
+            // the edge is not in the list so add it
+            intersectingEdges.Add(e);
+        }
+    }
+
+    bool IsEdgeCrossingEdge(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+    {
+        // we will here run into floating point precision issues so we have to be careful
+        // to solve that you can first check the end points
+        // and modify the line-line intersection algorithm to include a small epsilon
+
+        // first check if the edges are sharing a point, if so, they are not crossing
+        if(a==c || a==d ||b==c||b==d)
+        {
+            return false;
+        }
+
+        // then chack if the lines are intersecting
+        if(!Edge.AreLineSegmentsIntersecting(a,b,c,d))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    // is an edge between p1 and p2 a constraint?
+    bool IsAnEdgeAConstraint(Vector3 p1, Vector3 p2, List<Vector3> constraints)
+    {
+        for (int i = 0; i < constraints.Count; i++)
+        {
+            Vector3 c1 = constraints[i];
+            Vector3 c2 = constraints[(((i+1) % constraints.Count) + constraints.Count) % constraints.Count];
+
+            if((p1 == c1 && p2 == c2) || (p2 == c1 && p1 == c2))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     Node[] CreateNodes(List<Triangle> tris, int size)
@@ -754,6 +1322,7 @@ public class NavGraph : MonoBehaviour {
                 }
 
                 int tentative_gScore = current.gCost + CostBetween(current, neighbour);
+                //Debug.Log("Tentative: " + tentative_gScore + " currentG: " + current.gCost);
                 if(tentative_gScore < neighbour.gCost || !openSet.Contains(neighbour))
                 {
                     // if you found a better path for this neighbour
@@ -761,6 +1330,7 @@ public class NavGraph : MonoBehaviour {
                     // update all this info for the neighbour
                     neighbour.gCost = tentative_gScore;
                     neighbour.hCost = CostBetween(neighbour, goalNode);
+                    //Debug.Log("Neighbour h: " + neighbour.hCost);
                     neighbour.cameFrom = current;
 
                     // if they weren't in the open set, add them
@@ -797,7 +1367,15 @@ public class NavGraph : MonoBehaviour {
         // needs to accomodate nodes that aren't neighbours
         //return (int)start.GetDistBetween(end);
 
-        return (int)Vector3.Distance(start.transform.position, end.transform.position);
+        // maybe should change this all to floats (would need to change g- and hCosts to floats)
+        // I was just truncating it before and ran into issues
+        // now I'm rounding it
+        // difference was g + h = 17 + 0 vs 14 + 2
+        // now is 17 + 0 vs 15 + 3
+        // that's the difference between truncating vs rounding in long, skinny triangles
+        // if the triangle was longer, it could be the difference between 18+0 vs 15+3
+        // ties are broken by hCost so in this example it would work out, but is that always true?
+        return Mathf.RoundToInt(Vector3.Distance(start.transform.position, end.transform.position));
     }
 
     Transform[] ReconstructPath(Node start, Node current)
