@@ -623,6 +623,34 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4200687314692446, guid: 57d86735833499b44ab296fd0c36481a,
     type: 2}
   m_PrefabInternal: {fileID: 681775076}
+--- !u!1 &118392126
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 118392127}
+  m_Layer: 9
+  m_Name: InnerNW Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &118392127
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 118392126}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.1400003, y: 0.50500107, z: 3.1599998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &166700851
 Prefab:
   m_ObjectHideFlags: 0
@@ -838,6 +866,34 @@ Transform:
   m_Children: []
   m_Father: {fileID: 535750854}
   m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &213062888
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 213062889}
+  m_Layer: 9
+  m_Name: InnerNE Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &213062889
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 213062888}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.1160002, y: 0.50500107, z: 3.1599998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &220376318
 GameObject:
@@ -1446,6 +1502,34 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!1 &405095327
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 405095328}
+  m_Layer: 9
+  m_Name: OuterSW Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &405095328
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 405095327}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.8439999, y: 0.50500107, z: -4.2929993}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &406781611
 GameObject:
   m_ObjectHideFlags: 0
@@ -1455,7 +1539,7 @@ GameObject:
   m_Component:
   - component: {fileID: 406781612}
   m_Layer: 9
-  m_Name: GraphPoint (5)
+  m_Name: InnerNE Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1588,7 +1672,7 @@ Transform:
   m_LocalScale: {x: 0.099999994, y: 1, z: 9.5843}
   m_Children: []
   m_Father: {fileID: 179169645}
-  m_RootOrder: 2
+  m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &411187315
 BoxCollider:
@@ -1957,7 +2041,7 @@ Transform:
   m_LocalScale: {x: 0.099999994, y: 1, z: 9.5843}
   m_Children: []
   m_Father: {fileID: 179169645}
-  m_RootOrder: 1
+  m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &491701210
 BoxCollider:
@@ -2067,7 +2151,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 4200687314692446, guid: 57d86735833499b44ab296fd0c36481a, type: 2}
       propertyPath: m_RootOrder
-      value: 3
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 4200687314692446, guid: 57d86735833499b44ab296fd0c36481a, type: 2}
       propertyPath: m_LocalScale.x
@@ -2140,6 +2224,8 @@ Transform:
   - {fileID: 406781612}
   - {fileID: 998740277}
   - {fileID: 1813831095}
+  - {fileID: 618500629}
+  - {fileID: 1147311785}
   m_Father: {fileID: 1287118422}
   m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2159,16 +2245,35 @@ MonoBehaviour:
   - {fileID: 1231292357}
   - {fileID: 724749441}
   - {fileID: 998740277}
+  - {fileID: 1147311785}
+  - {fileID: 1589338077}
+  - {fileID: 1144420953}
+  - {fileID: 1546915345}
+  - {fileID: 405095328}
+  - {fileID: 1865810076}
+  - {fileID: 1786960606}
+  - {fileID: 618500629}
   innerPoints:
   - {fileID: 641756674}
   - {fileID: 566838590}
   - {fileID: 406781612}
   - {fileID: 1813831095}
+  interiorHoles:
+  - points:
+    - {fileID: 641756674}
+    - {fileID: 566838590}
+    - {fileID: 406781612}
+    - {fileID: 1813831095}
+  - points:
+    - {fileID: 2067160898}
+    - {fileID: 118392127}
+    - {fileID: 213062889}
+    - {fileID: 547122413}
   destroyInner: 1
   triNumber: -1
-  nodeNumber: 0
-  pathStartNode: 0
-  pathEndNode: 1
+  nodeNumber: -1
+  pathStartNode: 3
+  pathEndNode: 4
   testPath: []
 --- !u!1 &521671479
 GameObject:
@@ -2570,6 +2675,34 @@ MonoBehaviour:
   rightLinks:
   - {fileID: 83914115}
   - {fileID: 388528308}
+--- !u!1 &547122412
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 547122413}
+  m_Layer: 9
+  m_Name: InnerSE Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &547122413
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 547122412}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.1160002, y: 0.50500107, z: -3.137001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &566838589
 GameObject:
   m_ObjectHideFlags: 0
@@ -2579,7 +2712,7 @@ GameObject:
   m_Component:
   - component: {fileID: 566838590}
   m_Layer: 9
-  m_Name: GraphPoint (3)
+  m_Name: InnerNW Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2683,6 +2816,34 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 587681810}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &618500628
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 618500629}
+  m_Layer: 9
+  m_Name: BridgeSW Car2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &618500629
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 618500628}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.5500002, y: 0.50500107, z: -4.380001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 520411062}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &620056420
 GameObject:
   m_ObjectHideFlags: 0
@@ -2720,7 +2881,7 @@ GameObject:
   m_Component:
   - component: {fileID: 641756674}
   m_Layer: 9
-  m_Name: GraphPoint (2)
+  m_Name: InnerSW Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2884,7 +3045,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 4200687314692446, guid: 57d86735833499b44ab296fd0c36481a, type: 2}
       propertyPath: m_RootOrder
-      value: 4
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 4200687314692446, guid: 57d86735833499b44ab296fd0c36481a, type: 2}
       propertyPath: m_LocalScale.x
@@ -3025,7 +3186,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: aaba3f2022fe3684e993f456f676cd19, type: 3}
       propertyPath: m_RootOrder
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: aaba3f2022fe3684e993f456f676cd19, type: 3}
       propertyPath: m_LocalScale.x
@@ -3043,6 +3204,10 @@ Prefab:
       propertyPath: m_Layer
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: aaba3f2022fe3684e993f456f676cd19, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: aaba3f2022fe3684e993f456f676cd19, type: 3}
   m_IsPrefabAsset: 0
@@ -3055,7 +3220,7 @@ GameObject:
   m_Component:
   - component: {fileID: 724749441}
   m_Layer: 9
-  m_Name: GraphPoint (4)
+  m_Name: OuterNE Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3329,7 +3494,7 @@ GameObject:
   m_Component:
   - component: {fileID: 998740277}
   m_Layer: 9
-  m_Name: GraphPoint (6)
+  m_Name: OuterSE Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3620,11 +3785,67 @@ Transform:
   m_Father: {fileID: 546594438}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1144420952
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1144420953}
+  m_Layer: 9
+  m_Name: OuterNE Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1144420953
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1144420952}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.8470001, y: 0.50500107, z: 4.3460007}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1145158169 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4200687314692446, guid: 57d86735833499b44ab296fd0c36481a,
     type: 2}
   m_PrefabInternal: {fileID: 1528808686}
+--- !u!1 &1147311784
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1147311785}
+  m_Layer: 9
+  m_Name: BridgeSE Car2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1147311785
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1147311784}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.5600004, y: 0.50500107, z: -4.380001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 520411062}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1153390548
 GameObject:
   m_ObjectHideFlags: 0
@@ -3956,7 +4177,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1231292357}
   m_Layer: 9
-  m_Name: GraphPoint (1)
+  m_Name: OuterNW Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4372,6 +4593,34 @@ MonoBehaviour:
     type: 2}
   m_PrefabInternal: {fileID: 1528808686}
   m_Script: {fileID: 11500000, guid: db98b8971e8c73a4e88b86f7537afb21, type: 3}
+--- !u!1 &1546915344
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1546915345}
+  m_Layer: 9
+  m_Name: OuterSE Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1546915345
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1546915344}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.8470001, y: 0.50500107, z: -4.2579994}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1575815963
 Prefab:
   m_ObjectHideFlags: 0
@@ -4470,6 +4719,34 @@ Prefab:
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 34057070c87e0a8449be40f47df7c70f, type: 2}
   m_IsPrefabAsset: 0
+--- !u!1 &1589338076
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1589338077}
+  m_Layer: 9
+  m_Name: BridgeNE Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1589338077
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1589338076}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.5600004, y: 0.50500107, z: 4.4299965}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1602199421
 GameObject:
   m_ObjectHideFlags: 0
@@ -4683,6 +4960,34 @@ Transform:
   m_Father: {fileID: 2088576658}
   m_RootOrder: 14
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1786960605
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1786960606}
+  m_Layer: 9
+  m_Name: BridgeNW Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1786960606
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1786960605}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.5500002, y: 0.50500107, z: 4.4299965}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1813831094
 GameObject:
   m_ObjectHideFlags: 0
@@ -4692,7 +4997,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1813831095}
   m_Layer: 9
-  m_Name: GraphPoint (7)
+  m_Name: InnerSE Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4786,6 +5091,34 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 26
   m_LocalEulerAnglesHint: {x: 50, y: 0, z: 0}
+--- !u!1 &1865810075
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1865810076}
+  m_Layer: 9
+  m_Name: OuterNW Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1865810076
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1865810075}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.8439999, y: 0.50500107, z: 4.3460007}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1897291214
 Prefab:
   m_ObjectHideFlags: 0
@@ -4870,7 +5203,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1947174053}
   m_Layer: 9
-  m_Name: GraphPoint
+  m_Name: OuterSW Car2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4947,6 +5280,7 @@ MonoBehaviour:
   - {fileID: 1613211346}
   - {fileID: 1644061996}
   innerPoints: []
+  interiorHoles: []
   destroyInner: 1
   triNumber: -1
   nodeNumber: 1
@@ -5011,6 +5345,34 @@ Prefab:
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 57d86735833499b44ab296fd0c36481a, type: 2}
   m_IsPrefabAsset: 0
+--- !u!1 &2067160897
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2067160898}
+  m_Layer: 9
+  m_Name: InnerSW Car3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2067160898
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2067160897}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.1400003, y: 0.50500107, z: -3.1539993}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 179169645}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2088576657
 GameObject:
   m_ObjectHideFlags: 0

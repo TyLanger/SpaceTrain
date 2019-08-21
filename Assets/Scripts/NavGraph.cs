@@ -14,7 +14,7 @@ public class NavGraph : MonoBehaviour {
     // assign some points for the bounds of the graph
     public Transform[] points;
     // TODO find/create points automatically
-    public Transform[] innerPoints;
+    public Hole[] interiorHoles;
     public bool destroyInner = true;
 
     Node[] nodes;
@@ -27,6 +27,12 @@ public class NavGraph : MonoBehaviour {
     public int pathStartNode = 0;
     public int pathEndNode = 1;
     public Transform[] testPath;
+
+    [System.Serializable]
+    public class Hole
+    {
+        public Transform[] points;
+    }
 
     void Start()
     {
@@ -50,11 +56,7 @@ public class NavGraph : MonoBehaviour {
         List<Vector3> pointList = new List<Vector3>();
         nodes = new Node[points.Length];
         List<Vector3> innerPointsList = new List<Vector3>();
-        /*
-        for (int i = 0; i < nodes.Length; i++)
-        {
-            nodes[i] = new Node(points[i]);
-        }*/
+
 
         for (int i = 0; i < points.Length; i++)
         {
@@ -70,27 +72,37 @@ public class NavGraph : MonoBehaviour {
             points[i] = points[points.Length - i - 1];
             points[points.Length - i - 1] = temp;
         }
-        for (int i = 0; i < innerPoints.Length; i++)
+        for (int i = 0; i < interiorHoles.Length; i++)
         {
-            innerPointsList.Add(innerPoints[i].position);
+            for (int j = 0; j < interiorHoles[i].points.Length; j++)
+            {
+                // add inner points from all holes
+                // add them all and the algorithm will figure out what their neighbours are
+                innerPointsList.Add(interiorHoles[i].points[j].position);
+            }
         }
 
         listOfTris = TriangulateConcavePolygon(pointList);
-        if (innerPoints.Length > 0)
+        if (innerPointsList.Count > 0)
         {
             listOfTris = TriangulateInner(innerPointsList, listOfTris, pointList.Count);
             // combine the array of outer points and inner points
             // nodes use the index to find the corresponding transform
             // so neeed it in one array
             //points += innerPoints
-            Transform[] allPoints = new Transform[points.Length + innerPoints.Length];
+            Transform[] allPoints = new Transform[points.Length + innerPointsList.Count];
             for (int i = 0; i < points.Length; i++)
             {
                 allPoints[i] = points[i];
             }
-            for (int i = 0; i < innerPoints.Length; i++)
+           
+            for (int i = 0; i < interiorHoles.Length; i++)
             {
-                allPoints[points.Length + i] = innerPoints[i];
+                for (int j = 0; j < interiorHoles[i].points.Length; j++)
+                {
+                    allPoints[points.Length + interiorHoles[i].points.Length * i + j] = interiorHoles[i].points[j];
+
+                }
             }
 
             points = allPoints;
@@ -101,7 +113,20 @@ public class NavGraph : MonoBehaviour {
         // assume inner points are the constraining points
         if (destroyInner)
         {
-            listOfTris = AddConstraints(listOfTris, innerPointsList);
+            // run addConstraints once for each hole
+            // need to run for each hole because it assumes you give it a list of points that are all neighbours and determine the hole
+            for (int i = 0; i < interiorHoles.Length; i++)
+            {
+                // need to make new separate lists
+                // each list is one hole
+                List<Vector3> interiorPointsList = new List<Vector3>();
+                for (int j = 0; j < interiorHoles[i].points.Length; j++)
+                {
+                    interiorPointsList.Add(interiorHoles[i].points[j].position);
+                }
+                listOfTris = AddConstraints(listOfTris, interiorPointsList);
+
+            }
         }
 
 
@@ -117,7 +142,7 @@ public class NavGraph : MonoBehaviour {
         {
             // create the constrained edges out of neighbouring vertices
             Vector3 v1 = constraints[i];
-            // loop around if too high (i+1)%Count probably doesn't quite work
+            // loop around if too high 
             Vector3 v2 = constraints[(((i + 1) % constraints.Count) + constraints.Count) % constraints.Count];
 
             // check if this edge already exists in the triangulation.
@@ -1412,12 +1437,15 @@ public class NavGraph : MonoBehaviour {
         }
         if(listOfTris != null)
         {
-            Gizmos.color = Color.green;
+            Gizmos.color = new Color(0f, 1f, 0.5f);//Color.green;
             for (int i = 0; i < listOfTris.Count; i++)
             {
-                Vector3 a = listOfTris[i].v1.position;
-                Vector3 b = listOfTris[i].v2.position;
-                Vector3 c = listOfTris[i].v3.position;
+                // find the position using the points array to get the transforms
+                // index is the transform's index in that array
+                // getting the transform gives you the current position so the debug moves with the transforms
+                Vector3 a = points[listOfTris[i].v1.index].position;
+                Vector3 b = points[listOfTris[i].v2.index].position;
+                Vector3 c = points[listOfTris[i].v3.index].position;
 
                 Gizmos.DrawWireSphere(a, 0.1f);
                 Gizmos.DrawWireSphere(b, 0.1f);
