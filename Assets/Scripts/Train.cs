@@ -30,6 +30,7 @@ public class Train : MonoBehaviour {
     public BoardingLink[] rightLinks;
     public event Action OnBoardable;
     //public Delegate Reminder();
+    public NavGraph navGraph;
 
     // Boarding Testing
     float testTime = 4;

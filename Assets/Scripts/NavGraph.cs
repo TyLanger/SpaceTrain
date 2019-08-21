@@ -31,6 +31,9 @@ public class NavGraph : MonoBehaviour {
     [System.Serializable]
     public class Hole
     {
+        // workaround to get info about multiple holes in the inspector
+        // what I really needed was an array of arrays of transforms
+        // what I have is an array of holes which is an array of tranforms
         public Transform[] points;
     }
 
@@ -1224,8 +1227,13 @@ public class NavGraph : MonoBehaviour {
         if (listOfTris != null && nodes != null)
         {
             Vector3 pos = trans.position;
-            foreach (Triangle t in listOfTris)
+            foreach (Triangle tri in listOfTris)
             {
+                // create a new t with updated positions
+                // the stored triangles in listOfTris only have their original positions, not updated positions
+                // cannot assign to 't' because it is a foreach iteration variable
+                // so changed it to tri
+                Triangle t = new Triangle(points[tri.v1.index].position, points[tri.v2.index].position, points[tri.v3.index].position, tri.v1.index, tri.v2.index, tri.v3.index);
                 if (t.IsPointInTriangle(t, pos))
                 {
                     // inside triangle
@@ -1269,6 +1277,7 @@ public class NavGraph : MonoBehaviour {
         for (int i = 0; i < listOfTris.Count; i++)
         {
             Triangle t = listOfTris[i];
+            t = new Triangle(points[t.v1.index].position, points[t.v2.index].position, points[t.v3.index].position, 0, 0, 0);
             // if you haven't found if the point is on the graph yet, keep checking
             // once you've found it (startOnGraph == true), don't need to check each tri anymore
             if(!startOnGraph && t.IsPointInTriangle(t, start.position))
@@ -1286,6 +1295,13 @@ public class NavGraph : MonoBehaviour {
             if(startOnGraph && endOnGraph)
             {
                 break;
+            }
+
+            if(i == listOfTris.Count-1)
+            {
+                // last item
+                Debug.Log(""+startOnGraph + endOnGraph+start.position+end.position+" "+listOfTris.Count);
+                Debug.Log(""+t.v1.position + t.v2.position + t.v3.position);
             }
         }
 

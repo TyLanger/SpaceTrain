@@ -31,6 +31,8 @@ public class Enemy : MonoBehaviour {
     bool onTrain = false;
 
     public Transform TargetMarker;
+    public Transform[] path;
+    public int pathIndex = 0;
 
     public Weapon weapon;
     public int weaponDamage = 15;
@@ -96,7 +98,34 @@ public class Enemy : MonoBehaviour {
 
             if (canMove)
             {
-                transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
+                if (path == null)
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
+                }
+                else
+                {
+                    // move via the A* path instead
+                    transform.position = Vector3.MoveTowards(transform.position, path[pathIndex].position, moveSpeed);
+                    // 0.3 is arbitrary
+                    // it's just close to the point, but doesn't have to be right on it
+                    // instead of distance, being able to see the next point might be a better solution
+                    // needs to be larger because the point is on the ground, but measures to the center of the agent
+                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 1.8f)
+                    {
+                        // watch for oout of bounds
+                        if (pathIndex < path.Length-1)
+                        {
+                            pathIndex++;
+                        }
+                        else
+                        {
+                            // end of path reached
+                            // what to do? find a new path? destroy this one? Update to follow a potentially moving target?
+                            // path = null?
+                        }
+                        
+                    }
+                }
             }
             // face where you're going
             transform.forward = targetObject.transform.position - transform.position;
@@ -180,6 +209,8 @@ public class Enemy : MonoBehaviour {
         for (int i = 0; i < allTargets.Length; i++)
         {
             currentDst = Vector3.Distance(allTargets[i].transform.position, transform.position);
+            // this will attack the last target in the list within the range
+            // if the first target is inside the aggro range and so is the 8th target, it will attack the 8th target
             if(currentDst < aggroRange)
             {
                 targetObject = allTargets[i];
@@ -320,6 +351,17 @@ public class Enemy : MonoBehaviour {
                 targetObject = trainEngine.gameObject;
                 targetFound = true;
                 FindTarget();
+
+                Debug.Log("On Train");
+                //path = trainEngine.GetComponentInChildren<NavGraph>().FindPath(transform, targetObject.transform);
+                // bad idea
+                // Train class should have a reference to the navGraph
+                // like:
+                if (trainEngine.navGraph != null)
+                {
+                    path = trainEngine.navGraph.FindPath(transform, targetObject.transform);
+                    pathIndex = 0;
+                }
             }
             else
             {
