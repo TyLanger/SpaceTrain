@@ -87,6 +87,7 @@ public class Enemy : MonoBehaviour {
             // When the enemy is chasing the player and the player puts the train in between them, the enemy fires a ray towards the player and hits the train
             // so it attacks the train even though it's trying to find the player (and it can't path find yet so it just moves straight towards the player)
             RaycastHit hit;
+            // if you can see your target and it's within attack range, attack it
             if(Physics.Raycast(transform.position, (targetObject.transform.position - transform.position).normalized, out hit, attackRange, LayerMask.GetMask("Train") | LayerMask.GetMask("Damageable")))
             {
                 
@@ -110,7 +111,7 @@ public class Enemy : MonoBehaviour {
                     // it's just close to the point, but doesn't have to be right on it
                     // instead of distance, being able to see the next point might be a better solution
                     // needs to be larger because the point is on the ground, but measures to the center of the agent
-                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 1.8f)
+                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 1.0f)
                     {
                         // watch for oout of bounds
                         if (pathIndex < path.Length-1)
@@ -128,6 +129,7 @@ public class Enemy : MonoBehaviour {
                 }
             }
             // face where you're going
+            // should be towards the direction you're facing while pathing towards the target
             transform.forward = targetObject.transform.position - transform.position;
             if(weapon != null)
             {
