@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,13 +23,21 @@ public class Enemy : MonoBehaviour {
     bool canMove = true;
 
     public Vector3 target;
-    GameObject targetObject;
+    public GameObject targetObject;
+    public Vector3 targetObjectDebugViewer;
+    public Vector3 targetObjectDebugViewerLocal;
+    // can I use a setter to also change the value of target?
+    // Is this even a good idea? I just want them to point to the same thing
+    //GameObject betterTargetObject { get; set { target = this.Vector3} }
+    //Vector3 betterTarget { get { betterTargetObject.transform.position}; set; }
     bool targetFound = false;
     // list of all the targets the enemy could have (players, train cars)
     public GameObject[] allTargets;
     public Train trainEngine;
     public event System.Action OnTrainBoarded;
-    bool onTrain = false;
+    public bool onTrain { get; protected set; }
+    // how close the train has to be for the enemy to attempt to board it
+    public float boardingRange = 100;
 
     public Transform TargetMarker;
     public Transform[] path;
@@ -42,7 +51,7 @@ public class Enemy : MonoBehaviour {
         respawnPoint = transform.position;
         health = GetComponent<Health>();
         health.OnDeath += Die;
-        
+
         if (trainEngine != null)
         {
             target = transform.position;
@@ -67,7 +76,84 @@ public class Enemy : MonoBehaviour {
         if (!alive)
             return;
 
+        if(targetObject != null)
+        {
+            targetObjectDebugViewer = targetObject.transform.position;
+            targetObjectDebugViewerLocal = targetObject.transform.localPosition;
+
+        }
+        #region STATEMACHINE
+        /*
+        // STATE MACHINE STYLE
+        // states should handle all logic. This jsut updates values
+
+        Vector3 lookTarget = Vector3.forward;
+        Vector3 moveTarget = Vector3.zero;
+        // does the enemy need to know what their target is?
+        // whether it is a location or the player or the train?
+        // currently use a mix of target and targetObject
+        // where target is the default and also used for positions (where no object exists) to intercept the train
+        // targetObject is used to path to the player or a train car when on board
+        // only ever call targetObject.transform.position
+        // except FindPath requires transforms.
+        // I don't think that's a technical limitation of findPath, but just how it currently is
+        // actually, it probably needs to be changed to really work with intercepting the train. That method only returns a V3 and doesn't seem like creating an object would be prudent
+        // but even when I do add A* to the ground off the train, won't the agents still want to move to a spot that isn't a node?
+        // or will there be frequent enough nodes along the tracks that they can move to the rendezvous point and a node at the same time. i.e. there exists a node that's near enough the real rz point
+
+        // chaseState.MoveTowards(target)
+        // moveTarget = target;
+
+        if(moveTarget != null)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
+        }
+
+        //except this will use A* so it will have a sequence of locations
+        // in chase state:
+        // Enemy.MoveTo(target);
+        // in here:
+        // MoveTo(Vec3 target)
+        // path = Astar.GetPath(target, current);
+        if (path != null)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, path[pathIndex].position, moveSpeed);
+
+            // check if you've reached the target position
+            // if you have, start moving towards the next node
+            if (Vector3.Distance(transform.position, path[pathIndex].position) < 1f)
+            {
+                // watch for out of bounds
+                if (pathIndex < path.Length - 1)
+                {
+                    pathIndex++;
+                }
+            }
+        }
+
+        // do I need canMove?
+        // what happens if this enemy gets rooted?
+        // go to rootedState?
+        // where it sets speed to 0?
+        // should I have:
+        // if(moveSpeed > 0)
+        // does this even save any performance? Probably not
+
+        // how does the enemy attack?
+        // call attack() from AttackState?
+
+        // not necessarily always looking where you are moving
+        transform.forward = lookTarget - transform.position;
+        if (weapon != null)
+        {
+            weapon.UpdateAimPos(lookTarget);
+        }
+        */
+        #endregion STATEMACHINE
+
+
         // target is found when a target from the list is within aggro range
+        //TODO Move to ChaseState
         if (targetFound)
         {
             if (TargetMarker != null)
@@ -111,7 +197,7 @@ public class Enemy : MonoBehaviour {
                     // it's just close to the point, but doesn't have to be right on it
                     // instead of distance, being able to see the next point might be a better solution
                     // needs to be larger because the point is on the ground, but measures to the center of the agent
-                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 1.0f)
+                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 1f)
                     {
                         // watch for oout of bounds
                         if (pathIndex < path.Length-1)
@@ -137,6 +223,7 @@ public class Enemy : MonoBehaviour {
             }
         }
         else
+        // TODO Move to IdleState or AggroState
         {
             if (TargetMarker != null)
             {
@@ -157,6 +244,46 @@ public class Enemy : MonoBehaviour {
             }
 
         }
+    }
+
+    // State Machine
+    private void Awake()
+    {
+        //InitializeStateMachine();
+    }
+
+    private void InitializeStateMachine()
+    {
+        var states = new Dictionary<Type, BaseState>()
+        {
+            { typeof(IdleState), new IdleState(this) },
+            { typeof(ChaseState), new ChaseState(this) },
+            { typeof(AttackState), new AttackState(this) }
+        };
+
+        GetComponent<StateMachine>().SetStates(states);
+    }
+    
+    public void SetMoveTarget(Vector3 targetPos)
+    {
+        // how do I check that I'm not just calculating the same path every frame?
+        //if(targetPos != currentTargetPos)
+        path = trainEngine.navGraph.FindPath(transform.position, targetPos);
+    }
+
+    public void SetLookTarget(Vector3 lookPos)
+    {
+        //lookTarget = lookPos;
+    }
+
+    public void PathToTarget()
+    {
+        // calculate a path to the current target (targetObject)
+        // how can I check if the target is stationary so I don't have to calculate a new path that is the same as the old path?
+        // GetComponent<Player> suggests movement
+        // GetComponent<ShippingContainer> suggests stationary?
+        // GetComponent<IMoveable> ?
+        SetMoveTarget(targetObject.transform.position);
     }
 
     void Respawn()
@@ -231,7 +358,7 @@ public class Enemy : MonoBehaviour {
     /// <summary>
     /// Intercept the train to try to board it
     /// </summary>
-    void InterceptTrain()
+    public void InterceptTrain()
     {
         // try to get to the track ahead of the train
 
@@ -361,7 +488,7 @@ public class Enemy : MonoBehaviour {
                 // like:
                 if (trainEngine.navGraph != null)
                 {
-                    path = trainEngine.navGraph.FindPath(transform, targetObject.transform);
+                    path = trainEngine.navGraph.FindPath(transform.position, targetObject.transform.position);
                     pathIndex = 0;
                 }
             }

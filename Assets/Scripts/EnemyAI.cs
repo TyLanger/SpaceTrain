@@ -16,6 +16,8 @@ public class EnemyAI : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         //GetComponent<Health>().OnDamage += TookDamage;
+        // This class is depreciated
+        Debug.Log("Does anything use this?");
 	}
 	
 	// Update is called once per frame

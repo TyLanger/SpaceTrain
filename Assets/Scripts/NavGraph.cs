@@ -43,7 +43,7 @@ public class NavGraph : MonoBehaviour {
         CreateGraph();
         if((pathStartNode >= 0 && pathStartNode < nodes.Length) && (pathEndNode >= 0 && pathEndNode < nodes.Length))
         {
-            Transform[] tempPath = FindPath(nodes[pathStartNode].transform, nodes[pathEndNode].transform);
+            Transform[] tempPath = FindPath(nodes[pathStartNode].transform.position, nodes[pathEndNode].transform.position);
             testPath = new Transform[tempPath.Length + 1];
             testPath[0] = nodes[pathStartNode].transform;
             for (int i = 0; i < tempPath.Length; i++)
@@ -1215,7 +1215,7 @@ public class NavGraph : MonoBehaviour {
         t2.halfEdge = four;
     }
 
-    Node GetClosestNode(Transform trans)
+    Node GetClosestNode(Vector3 pos)
     {
         // not technically closest
         // only returns vertices from the triangle the position is inside of
@@ -1226,7 +1226,7 @@ public class NavGraph : MonoBehaviour {
         // make sure there are triangles and nodes. Otherwise this is meaningless
         if (listOfTris != null && nodes != null)
         {
-            Vector3 pos = trans.position;
+            //Vector3 pos = trans.position; // old style of GetClosestNod(trans)
             foreach (Triangle tri in listOfTris)
             {
                 // create a new t with updated positions
@@ -1264,7 +1264,9 @@ public class NavGraph : MonoBehaviour {
         return null;
     }
 
-    public Transform[] FindPath(Transform start, Transform end)
+    //public Transform[] FindPath(Transform start, Transform end)
+
+    public Transform[] FindPath(Vector3 start, Vector3 end)
     {
         // end point as transform because it will move over time 
         // end point is most likely going to be a specific train car or a player
@@ -1280,13 +1282,13 @@ public class NavGraph : MonoBehaviour {
             t = new Triangle(points[t.v1.index].position, points[t.v2.index].position, points[t.v3.index].position, 0, 0, 0);
             // if you haven't found if the point is on the graph yet, keep checking
             // once you've found it (startOnGraph == true), don't need to check each tri anymore
-            if(!startOnGraph && t.IsPointInTriangle(t, start.position))
+            if(!startOnGraph && t.IsPointInTriangle(t, start))
             {
                 startOnGraph = true;
             }
             // finding the start and end are independant. Once you find one, you can quit searching for it
             // but you still need to keep searching for the other
-            if (!endOnGraph && t.IsPointInTriangle(t, end.position))
+            if (!endOnGraph && t.IsPointInTriangle(t, end))
             {
                 endOnGraph = true;
             }
@@ -1300,7 +1302,7 @@ public class NavGraph : MonoBehaviour {
             if(i == listOfTris.Count-1)
             {
                 // last item
-                Debug.Log(""+startOnGraph + endOnGraph+start.position+end.position+" "+listOfTris.Count);
+                Debug.Log(""+startOnGraph + endOnGraph+start+end+" "+listOfTris.Count);
                 Debug.Log(""+t.v1.position + t.v2.position + t.v3.position);
             }
         }
