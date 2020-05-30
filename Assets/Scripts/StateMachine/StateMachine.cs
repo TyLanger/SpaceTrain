@@ -1,44 +1,84 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
+using Object = System.Object;
 
+// From: https://www.youtube.com/watch?v=V75hgcsCGOM
 
-// Tutorial from https://youtu.be/YdERlPfwUb0
+public class StateMachine
+{
+   private IState _currentState;
+   
+   private Dictionary<Type, List<Transition>> _transitions = new Dictionary<Type,List<Transition>>();
+   private List<Transition> _currentTransitions = new List<Transition>();
+   private List<Transition> _anyTransitions = new List<Transition>();
+   
+   private static List<Transition> EmptyTransitions = new List<Transition>(0);
 
-public class StateMachine : MonoBehaviour {
+   public void Tick()
+   {
+      var transition = GetTransition();
+      if (transition != null)
+         SetState(transition.To);
+      
+      _currentState?.Tick();
+   }
 
-    private Dictionary<Type, BaseState> availableStates;
+   public void SetState(IState state)
+   {
+      if (state == _currentState)
+         return;
+      
+      _currentState?.OnExit();
+      _currentState = state;
+      
+      _transitions.TryGetValue(_currentState.GetType(), out _currentTransitions);
+      if (_currentTransitions == null)
+         _currentTransitions = EmptyTransitions;
+      
+      _currentState.OnEnter();
+   }
 
-    public BaseState currentState { get; private set; }
-    public event Action<BaseState> OnStateChanged;
+   public void AddTransition(IState from, IState to, Func<bool> predicate)
+   {
+      List<Transition> transitions = new List<Transition>(); // should be able to do this inline in C# 7 and Unity should use C# 7 so I dunno why it's using C# 6
+      if (_transitions.TryGetValue(from.GetType(), out transitions) == false)
+      {
+         transitions = new List<Transition>();
+         _transitions[from.GetType()] = transitions;
+      }
+      
+      transitions.Add(new Transition(to, predicate));
+   }
 
-	public void SetStates(Dictionary<Type, BaseState> states)
-    {
-        availableStates = states;
+   public void AddAnyTransition(IState state, Func<bool> predicate)
+   {
+      _anyTransitions.Add(new Transition(state, predicate));
+   }
 
-    }
+   private class Transition
+   {
+      public Func<bool> Condition {get; }
+      public IState To { get; }
 
-	// Update is called once per frame
-	void Update () {
-	    if(currentState == null)
-        {
-            currentState = availableStates[typeof(BaseState)];
-            //currentState = availableStates.Values.First();
-        }
+      public Transition(IState to, Func<bool> condition)
+      {
+         To = to;
+         Condition = condition;
+      }
+   }
 
-        // ?. checks to see if current state is null first
-        var nextState = currentState?.Tick();
+   private Transition GetTransition()
+   {
+      foreach(var transition in _anyTransitions)
+         if (transition.Condition())
+            return transition;
+      
+      foreach (var transition in _currentTransitions)
+         if (transition.Condition())
+            return transition;
 
-        if(nextState != null && nextState != currentState?.GetType())
-        {
-            SwitchToNewState(nextState);
-        }
-	}
-
-    private void SwitchToNewState(Type nextState)
-    {
-        currentState = availableStates[nextState];
-        OnStateChanged?.Invoke(currentState);
-    }
+      return null;
+   }
 }

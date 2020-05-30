@@ -33,10 +33,25 @@ public class Enemy : MonoBehaviour {
     bool targetFound = false;
     // list of all the targets the enemy could have (players, train cars)
     public GameObject[] allTargets;
+
+    // Reference to the boarding link you are trying to go to. Used by BoardTrain state
+    public BoardingLink TargetBoardingPoint;
+    public float TrainBoardDist = 1; // distance you can use the link from. 
+
+    public float lootReach = 2; // arbitrary number. How close you need to be to loot to be able to pick it up. Used by PlunderTrain state
+    public float timeBetweenPlunders = 4; // arbitrary time. How often you can attempt to plunder a stockpile for loot. Used by PlunderTrain state
+    public Stockpile plunderTarget; // the stockpile you're trying to plunder. Used by PlunderTrain state. Set by SearchForTargetsOnTrain state
+
+    public BoardingLink disembarkLink; // the link you're trying to get to in order to leave the train
+    public float disembarkDistance = 1;
+
+    public Vector3 trainRZPoint; // point you have to go to to get on the train
+    internal float maxTimeToIntercept = 0;
+
     public Train trainEngine;
     public event System.Action OnTrainBoarded;
     public bool onTrain { get; protected set; }
-    // how close the train has to be for the enemy to attempt to board it
+    // how close the train has to be for the enemy to attempt to board it. (calculate an intercept)
     public float boardingRange = 100;
 
     public Transform TargetMarker;
@@ -44,7 +59,6 @@ public class Enemy : MonoBehaviour {
     public int pathIndex = 0;
 
     public Weapon weapon;
-    public int weaponDamage = 15;
 
     // Use this for initialization
     void Start() {
@@ -193,7 +207,7 @@ public class Enemy : MonoBehaviour {
                 {
                     // move via the A* path instead
                     transform.position = Vector3.MoveTowards(transform.position, path[pathIndex].position, moveSpeed);
-                    // 0.3 is arbitrary
+                    // < 1f is arbitrary
                     // it's just close to the point, but doesn't have to be right on it
                     // instead of distance, being able to see the next point might be a better solution
                     // needs to be larger because the point is on the ground, but measures to the center of the agent
@@ -209,6 +223,8 @@ public class Enemy : MonoBehaviour {
                             // end of path reached
                             // what to do? find a new path? destroy this one? Update to follow a potentially moving target?
                             // path = null?
+                            // endOfPathReached event?
+                            // probably just do nothing. the AI should control when getting a new path
                         }
                         
                     }
@@ -254,6 +270,7 @@ public class Enemy : MonoBehaviour {
 
     private void InitializeStateMachine()
     {
+        // old version
         var states = new Dictionary<Type, BaseState>()
         {
             { typeof(IdleState), new IdleState(this) },
@@ -261,7 +278,8 @@ public class Enemy : MonoBehaviour {
             { typeof(AttackState), new AttackState(this) }
         };
 
-        GetComponent<StateMachine>().SetStates(states);
+        
+        //GetComponent<StateMachine>().SetStates(states);
     }
     
     public void SetMoveTarget(Vector3 targetPos)
@@ -283,6 +301,8 @@ public class Enemy : MonoBehaviour {
         // GetComponent<Player> suggests movement
         // GetComponent<ShippingContainer> suggests stationary?
         // GetComponent<IMoveable> ?
+        // Maybe keep track of the last time you changed your path. 
+        // And then make the time between paths increase as you swap paths. 
         SetMoveTarget(targetObject.transform.position);
     }
 
@@ -325,6 +345,28 @@ public class Enemy : MonoBehaviour {
     void Attack()
     {
         weapon.Attack();
+    }
+
+    internal void BreakOpenPlunderTarget()
+    {
+        if(plunderTarget != null)
+        {
+            plunderTarget.remainingHealth -= 10; // arbitrary. should be decremented by a variable like stockpileBreakingStrength
+        }
+    }
+
+    internal void LootStockpile()
+    {
+        
+        if(plunderTarget != null)
+        {
+            if(plunderTarget.remainingHealth <= 0)
+            {
+                // no health means it's open/unlocked
+                plunderTarget.remainingHealth -= 10;
+                // currentLoot += 10;
+            }
+        }
     }
 
     void FindTarget()
@@ -403,6 +445,36 @@ public class Enemy : MonoBehaviour {
         Debug.Log(gameObject.name + ": Didn't find boarding; moving to closest");
     }
 
+    internal void BoardTrain()
+    {
+        // currently handled in OnTriggerEnter()
+        //transform.position = link.GetOnBoardPosition();
+        //OnTrainBoarded?.Invoke();
+    }
+
+    internal void Disembark()
+    {
+        Debug.Log(gameObject + " is trying to jump off train");
+        transform.position = disembarkLink.groundPoint.position; // might not be quite this easy.
+    }
+
+    internal Vector3[] GetDisembarkPointsAsPositions()
+    {
+        // should this method be in the train?
+
+        // get all boarding links
+        // left links aren't hooked up yet
+        var links = trainEngine.rightLinks;
+        Vector3[] points = new Vector3[links.Length];
+
+        for (int i = 0; i < links.Length; i++)
+        {
+            points[i] = links[i].trainPoint.position;
+        }
+
+        return points;
+    }
+
     /// <summary>
     ///  Get to within attack range of the train so you can attack from a distance
     /// </summary>
@@ -471,10 +543,7 @@ public class Enemy : MonoBehaviour {
                 // stop moving
                 // otherwise the enemy will just try to jump off the train
                 //canMove = false;
-                if(OnTrainBoarded != null)
-                {
-                    OnTrainBoarded();
-                }
+                OnTrainBoarded?.Invoke();
 
                 onTrain = true;
                 targetObject = trainEngine.gameObject;
