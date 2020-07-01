@@ -1264,6 +1264,34 @@ public class NavGraph : MonoBehaviour {
         return null;
     }
 
+    Node GetClosestNode(Vector3 pos, Triangle t)
+    {
+        // assume pos is in triangle
+
+        // helper for FindPath for finding the nearest node for the start and end points
+        // saves searching every triangle again
+
+        float distV1 = Vector3.Distance(t.v1.position, pos);
+        float distV2 = Vector3.Distance(t.v2.position, pos);
+        float distV3 = Vector3.Distance(t.v3.position, pos);
+
+        if (distV1 <= distV2 && distV1 <= distV3)
+        {
+            // v1 is closest
+            return nodes[t.v1.index];
+        }
+        else if (distV2 <= distV1 && distV2 <= distV3)
+        {
+            // v2 is closest
+            return nodes[t.v2.index];
+        }
+        else
+        {
+            // v3 is closest
+            return nodes[t.v3.index];
+        }
+    }
+
     //public Transform[] FindPath(Transform start, Transform end)
 
     public Transform[] FindPath(Vector3 start, Vector3 end)
@@ -1275,6 +1303,10 @@ public class NavGraph : MonoBehaviour {
         // this should probably just be in a generic IsWalkable() method
         bool startOnGraph = false;
         bool endOnGraph = false;
+
+        // the triangles the start and end points are inside of
+        Triangle startTri = new Triangle(Vector3.zero, Vector3.zero, Vector3.zero, 0, 0, 0); // initialize them to nothing
+        Triangle endTri = startTri;
         // check if start and end points are pathable by this graph
         for (int i = 0; i < listOfTris.Count; i++)
         {
@@ -1285,12 +1317,14 @@ public class NavGraph : MonoBehaviour {
             if(!startOnGraph && t.IsPointInTriangle(t, start))
             {
                 startOnGraph = true;
+                startTri = t;
             }
             // finding the start and end are independant. Once you find one, you can quit searching for it
             // but you still need to keep searching for the other
             if (!endOnGraph && t.IsPointInTriangle(t, end))
             {
                 endOnGraph = true;
+                endTri = t;
             }
             // both points exist on graph
             // can stop checking
@@ -1315,8 +1349,8 @@ public class NavGraph : MonoBehaviour {
 
         // calculate the path with A*
 
-        // find the node that is closest to the position
-        Node startNode = GetClosestNode(start);
+        // find the node that is closest to the position. We know the triangle it's in from the loop above checking if it exists on the graph.
+        Node startNode = GetClosestNode(start, startTri);
         if(startNode == null)
         {
             Debug.Log("Start null");
@@ -1324,7 +1358,7 @@ public class NavGraph : MonoBehaviour {
         // Really want to just end when you reach the triangle the destination is in
         // don't really care about getting to the nearest vertex
         // this still is probably the best way to do it.
-        Node goalNode = GetClosestNode(end);
+        Node goalNode = GetClosestNode(end, endTri);
         if(goalNode == null)
         {
             Debug.Log("Goal null");

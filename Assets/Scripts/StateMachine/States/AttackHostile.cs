@@ -21,7 +21,7 @@ internal class AttackHostile : IState
 		// stuff I care about
 		CanSeeHostile();
 		WithinRangeToAttack();
-		// which order do they go in?
+		// which order do they go in? CanSee, then range. How would you check range on something you can't see?
 		
 		if(CanSeeHostile())
 		{

@@ -22,7 +22,7 @@ public class Enemy : MonoBehaviour {
     public float attackRange = 0.5f;
     bool canMove = true;
 
-    public Vector3 target;
+    public Vector3 moveTarget;
     public GameObject targetObject;
     public Vector3 targetObjectDebugViewer;
     public Vector3 targetObjectDebugViewerLocal;
@@ -35,7 +35,7 @@ public class Enemy : MonoBehaviour {
     public GameObject[] allTargets;
 
     // Reference to the boarding link you are trying to go to. Used by BoardTrain state
-    public BoardingLink TargetBoardingPoint;
+    public BoardingLink TargetBoardingLink;
     public float TrainBoardDist = 1; // distance you can use the link from. 
 
     public float lootReach = 2; // arbitrary number. How close you need to be to loot to be able to pick it up. Used by PlunderTrain state
@@ -46,6 +46,7 @@ public class Enemy : MonoBehaviour {
     public float disembarkDistance = 1;
 
     public Vector3 trainRZPoint; // point you have to go to to get on the train
+    public bool hasTrainRZPoint = false;
     internal float maxTimeToIntercept = 0;
 
     public Train trainEngine;
@@ -60,6 +61,14 @@ public class Enemy : MonoBehaviour {
 
     public Weapon weapon;
 
+    private StateMachine _stateMachine;
+    public float timeOfIntercept;
+    //public Transform plunderTarget; // should this be a Stockpile (instead of a transform)?
+    public GameObject hostileTarget;
+
+    int currentInventory;
+    int maxInventory = 10;
+
     // Use this for initialization
     void Start() {
         respawnPoint = transform.position;
@@ -68,7 +77,7 @@ public class Enemy : MonoBehaviour {
 
         if (trainEngine != null)
         {
-            target = transform.position;
+            moveTarget = transform.position;
 
             Invoke("InterceptTrain", 0.5f);
         }
@@ -77,12 +86,79 @@ public class Enemy : MonoBehaviour {
             // temporary
             // enemy stands still if there is no train
             // i.e. when in the testing scene
-            target = transform.position;
+            moveTarget = transform.position;
             if (allTargets.Length > 0)
             {
                 FindTarget();
             }
         }
+    }
+
+    // Rename to Awake when it all works
+    void Awakes()
+    {
+        _stateMachine = new StateMachine();
+
+
+        // States
+        var search = new SearchForTrainIntercept(this);
+        var moveToTrain = new MoveToRZPoint(this);
+        var board = new BoardTrain(this);
+        var searchOnTrain = new SearchForTargetsOnTrain(this);
+        var plunder = new PlunderTrain(this);
+        var disembark = new DisembarkTrain(this);
+        var attack = new AttackHostile(this);
+        var investigate = new InvestigateHostile(this);
+
+        // Transitions
+        // at = addTransition
+        At(search, moveToTrain, HasTrainRZPoint());
+        At(moveToTrain, board, CanBoard());
+        At(moveToTrain, search, MissedWindow());
+        At(board, searchOnTrain, OnTrain());
+        At(searchOnTrain, plunder, HasPlunderTarget());
+        At(searchOnTrain, attack, HasHostileTarget());
+        At(attack, searchOnTrain, HostileNoLongerExists());
+        At(attack, investigate, HostileOutOfSight());
+        At(plunder, disembark, InventoryFullOfLoot());
+
+
+        // set base state
+        _stateMachine.SetState(search);
+
+        // Helper Methods
+        void At(IState from, IState to, Func<bool> condition) => _stateMachine.AddTransition(from, to, condition);
+
+        // assuming rzPoint being all 0s means it hasn't been set yet
+        //TODO: have it expire. After you swap states, it is probably no longer relevent
+        Func<bool> HasTrainRZPoint() => () => hasTrainRZPoint;
+        Func<bool> CanBoard() => () => HasTrainRZPoint()() && (Vector3.Distance(transform.position, trainRZPoint) < 1f);
+        Func<bool> MissedWindow() => () =>
+        {
+            // time of intercept should be calculated when the intercept is first calculated (but it's not ATM)
+            float predictedTimeRemaining = Vector3.Distance(transform.position, trainRZPoint) * moveSpeed;
+            if (Time.time + predictedTimeRemaining > timeOfIntercept)
+            {
+                return true;
+            }
+            return false;
+        };
+        // which OnTrain is more trustworthy? Both for redundancy
+        //Func<bool> OnTrain() => () => onTrain;
+        Func<bool> OnTrain() => () => transform.parent.CompareTag("Train");
+        Func<bool> HasPlunderTarget() => () => OnTrain()() && plunderTarget != null;
+        Func<bool> HasHostileTarget() => () => OnTrain()() && hostileTarget != null;
+        // don't necessarily need to be on the train to attack, but this enemy does
+        // other types of enemies could extend this and change the requirement
+        Func<bool> HostileNoLongerExists() => () => hostileTarget == null;
+        Func<bool> HostileOutOfSight() => () => !CanSee(hostileTarget);
+        Func<bool> InventoryFullOfLoot() => () => currentInventory >= maxInventory;
+
+    }
+
+    void Update()
+    {
+        //_stateMachine.Tick();
     }
 
     // Update is called once per frame
@@ -167,19 +243,12 @@ public class Enemy : MonoBehaviour {
 
 
         // target is found when a target from the list is within aggro range
-        //TODO Move to ChaseState
         if (targetFound)
         {
             if (TargetMarker != null)
             {
                 TargetMarker.position = targetObject.transform.position;
             }
-            /* raycasting instead. Works better for rectangular target objects. You hit their hitbox instead checking for their center
-            if(Vector3.Distance(transform.position, targetObject.transform.position) < attackRange)
-            {
-                Attack();
-            }
-            */
             
             // Train is on layer "Train"
             // Player is on layer "Damageable"
@@ -218,15 +287,6 @@ public class Enemy : MonoBehaviour {
                         {
                             pathIndex++;
                         }
-                        else
-                        {
-                            // end of path reached
-                            // what to do? find a new path? destroy this one? Update to follow a potentially moving target?
-                            // path = null?
-                            // endOfPathReached event?
-                            // probably just do nothing. the AI should control when getting a new path
-                        }
-                        
                     }
                 }
             }
@@ -239,59 +299,52 @@ public class Enemy : MonoBehaviour {
             }
         }
         else
-        // TODO Move to IdleState or AggroState
         {
             if (TargetMarker != null)
             {
-                TargetMarker.position = target;
+                TargetMarker.position = moveTarget;
             }
-            else if (allTargets.Length > 0)
-            {
-                FindTarget();
-            }
+
             if (canMove)
             {
-                transform.position = Vector3.MoveTowards(transform.position, target, moveSpeed);
+                transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
             }
             // face where you're going
-            if (target != transform.position)
+            if (moveTarget != transform.position)
             {
-                transform.forward = target - transform.position;
+                transform.forward = moveTarget - transform.position;
             }
-
         }
-    }
-
-    // State Machine
-    private void Awake()
-    {
-        //InitializeStateMachine();
-    }
-
-    private void InitializeStateMachine()
-    {
-        // old version
-        var states = new Dictionary<Type, BaseState>()
-        {
-            { typeof(IdleState), new IdleState(this) },
-            { typeof(ChaseState), new ChaseState(this) },
-            { typeof(AttackState), new AttackState(this) }
-        };
-
-        
-        //GetComponent<StateMachine>().SetStates(states);
-    }
-    
-    public void SetMoveTarget(Vector3 targetPos)
-    {
-        // how do I check that I'm not just calculating the same path every frame?
-        //if(targetPos != currentTargetPos)
-        path = trainEngine.navGraph.FindPath(transform.position, targetPos);
     }
 
     public void SetLookTarget(Vector3 lookPos)
     {
         //lookTarget = lookPos;
+    }
+
+    bool CanSee(GameObject lookTarget)
+    {
+        //if(raycast)
+        return true;
+    }
+
+    public void StartMovingToRZPoint()
+    {
+        // move in a straight line to the move target. Doesn't use pathfinding
+        moveTarget = trainRZPoint;
+    }
+
+    public void SetMoveTarget(Vector3 targetPos)
+    {
+        // how do I check that I'm not just calculating the same path every frame?
+        //if(targetPos != currentTargetPos)
+        path = trainEngine.navGraph.FindPath(transform.position, targetPos);
+        if(path == null)
+        {
+            // this means the targetPos is not on the graph
+            // so it's on the ground where there is no path.
+            // That's a big ASSume
+        }
     }
 
     public void PathToTarget()
@@ -413,6 +466,7 @@ public class Enemy : MonoBehaviour {
         }
 
         Vector3[] boardingPoints;
+        BoardingLink[] boardingLinks;
         float closestDst = 0;
         float currentDst = 0;
 
@@ -421,15 +475,18 @@ public class Enemy : MonoBehaviour {
         // not THE closest boarding point yet
         for (int t = 5; t <= 20; t += 5)
         {
-            boardingPoints = trainEngine.GetBoardingLocationsInTime(t);
+            (boardingPoints, boardingLinks) = trainEngine.GetBoardingLocationsInTime(t);
             for (int i = 0; i < boardingPoints.Length; i++)
             {
                 currentDst = Vector3.Distance(transform.position, boardingPoints[i]);
                 // x/ time.fixedDeltaTime is the number of fixed updates there are in x seconds
                 if (currentDst < moveSpeed * (t/Time.fixedDeltaTime))
                 {
-                    target = boardingPoints[i];
+                    trainRZPoint = boardingPoints[i];
+                    TargetBoardingLink = boardingLinks[i];
+                    //moveTarget = boardingPoints[i]; // move target is set by MoveToRZPoint state
                     Debug.Log(gameObject.name + ": Successful Boarding at time = " + t);
+                    hasTrainRZPoint = true;
                     return;
                 }
                 else
@@ -437,19 +494,24 @@ public class Enemy : MonoBehaviour {
                     if(currentDst < closestDst || closestDst == 0)
                     {
                         closestDst = currentDst;
-                        target = boardingPoints[i];
+                        trainRZPoint = boardingPoints[i];
+                        TargetBoardingLink = boardingLinks[i];
+                        //moveTarget = boardingPoints[i];
                     }
                 }
             }
         }
+        hasTrainRZPoint = true;
         Debug.Log(gameObject.name + ": Didn't find boarding; moving to closest");
     }
 
     internal void BoardTrain()
     {
         // currently handled in OnTriggerEnter()
-        //transform.position = link.GetOnBoardPosition();
-        //OnTrainBoarded?.Invoke();
+        transform.position = TargetBoardingLink.GetOnBoardPosition();
+        OnTrainBoarded?.Invoke();
+        onTrain = true;
+        // finding targets should be handled by SearchForTargetsOnTrain
     }
 
     internal void Disembark()
@@ -494,7 +556,7 @@ public class Enemy : MonoBehaviour {
                 // move towards the intercept point
                 // when you get there, you should be in range to attack
                 // then the attack logic should kick in
-                target = interceptPoint;
+                //moveTarget = interceptPoint;
                 Debug.Log("Approach Successful");
                 return;
             }
@@ -503,7 +565,7 @@ public class Enemy : MonoBehaviour {
                 if(currentDst < closestDst || closestDst == 0)
                 {
                     closestDst = currentDst;
-                    target = interceptPoint;
+                    //moveTarget = interceptPoint;
                 }
             }
         }
@@ -530,6 +592,7 @@ public class Enemy : MonoBehaviour {
         }
     }
 
+    /*
     void OnTriggerEnter(Collider col)
     {
         if(col.CompareTag("GroundLink"))
@@ -567,4 +630,5 @@ public class Enemy : MonoBehaviour {
             }
         }
     }
+    */
 }

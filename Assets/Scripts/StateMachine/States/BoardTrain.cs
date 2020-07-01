@@ -1,29 +1,24 @@
-
-
 using UnityEngine;
 
 internal class BoardTrain : IState
 {
 	
 	private readonly Enemy _enemy;
-	private readonly BoardingLink _trainBoardingPoint;
+	private readonly BoardingLink _trainBoardingLink;
 	private readonly float _boardDist;
 	
 	public BoardTrain(Enemy enemy)
 	{
 		_enemy = enemy;
-		_trainBoardingPoint = enemy.TargetBoardingPoint;
+		_trainBoardingLink = enemy.TargetBoardingLink;
 		_boardDist = enemy.TrainBoardDist;
 		
 	}
 	
 	public void Tick()
 	{
-		if(Vector3.Distance(_enemy.transform.position, _trainBoardingPoint.transform.position) < _boardDist)
+		if(Vector3.Distance(_enemy.transform.position, _trainBoardingLink.groundPoint.position) < _boardDist)
 		{
-			// doesn't exist
-			// currently, the train just has trigger bodies that the enemy collides with
-			// then it teleports onto the train.
 			_enemy.BoardTrain();
 		}
 		

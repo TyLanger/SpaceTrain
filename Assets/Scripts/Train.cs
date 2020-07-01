@@ -155,7 +155,7 @@ public class Train : MonoBehaviour {
         }
     }
 
-    public Vector3[] GetBoardingLocationsInTime(float t, bool rightSide = true)
+    public (Vector3[], BoardingLink[]) GetBoardingLocationsInTime(float t, bool rightSide = true)
     {
         // train will have some spots on them for jumping aboard
         // should be rightLinks.Length + leftLinks.Length
@@ -219,7 +219,7 @@ public class Train : MonoBehaviour {
         // just a parameter?
         // enemies should know which side they're on to cut down on some calculations
 
-        return boardingSpots;
+        return (boardingSpots, rightLinks);
     }
 
     void ReachedEndOfLine()
