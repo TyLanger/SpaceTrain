@@ -32,7 +32,7 @@ public class SearchForTargetsOnTrain : IState
 			{
 				
 			
-			
+			    // dist should technically be path distance, not straight line dist, but this is probably close enough for now
 			
 				float dist = Vector3.Distance(_enemy.transform.position, s.transform.position);
 				if(dist < shortestDist)
@@ -92,41 +92,39 @@ public class SearchForTargetsOnTrain : IState
 	}
 	
 	public void OnEnter() {
-        /*
-         * 
-         * This is just all pseudocode
-         * TODO: real variable names
-         * 
-         * 
-		ListOfTargets = _enemy.trainEngine.GetAllTargets;
-		// returns all players aboard as well as the stockpiles on the trains that you can rob
-		
-		ListOfHostiles = _enemy.trainEngine.GetHostiles;
-		ListOfStockpiles = _enemy.trainEngine.GetStockpiles;
-		
-		Hostile closestHostileThatCanBeSeen;
-		float shortestDistanceToHostile = 10000;
-		
-		foreach(Hostile h in ListOfHostiles)
-		{
-			if(canSee(h))
-			{
-				// attack the hostile you can see.
-				if(dist = Vector3.Distance(transform.position, h.transform.position) < shortestDistanceToHostile)
-				{
-					shortestDistanceToHostile = dist;
-					closestHostileThatCanBeSeen = h;
-				}
-			}
-		}
-		
-		if(closestHostileThatCanBeSeen != null)
-		{
-			// can see at least 1 hostile
-			// probably attack that one.
-			_enemy.targetHostile = closestHostileThatCanBeSeen;
-			return;
-		}
+
+        //start with enemies you can see
+        // pick the nearest one
+        // if you can't see any
+        // move on to looting 
+        // choose the closest
+
+
+        HashSet<GameObject> targetSet = _enemy.trainEngine.GetAllFriendlyTargets();
+
+        float shortestDist = 100000;
+        GameObject closestTarget = null;
+
+        foreach (var t in targetSet)
+        {
+            float dist = _enemy.GetSightDistance(t);
+            if(dist>0)
+            {
+                if(dist < shortestDist)
+                {
+                    shortestDist = dist;
+                    closestTarget = t;
+                }
+            }
+        }
+
+        if(closestTarget != null)
+        {
+            // can see at least one target
+            _enemy.hostileTarget = closestTarget;
+        }
+
+        /* Stockpiles don't exactly exist yet
 		
 		Stockpile stockToLoot = EvaluateBestStockpileToLoot();
 		if(stockToLoot != null)

@@ -26,7 +26,7 @@ internal class InvestigateHostile : IState
 		
 		if(ReachedEndOfPath())
 		{
-			_enemy.GiveUpOnHstile();
+			_enemy.GiveUpOnHostile();
 			// go back to searchForTargetsOnTrain
 		}
         */

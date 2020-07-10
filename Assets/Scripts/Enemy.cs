@@ -21,6 +21,11 @@ public class Enemy : MonoBehaviour {
     // the range where it will attemp to atack targets
     public float attackRange = 0.5f;
     bool canMove = true;
+    public float outerAttackRange = 0.5f;
+    public float preferredAttackRange = 0.5f;
+    // move until you are inside the preferred attack range and then you can stop
+    // don't start moving again until you are outside the outer attack range.
+    // these might be redundant for melee attacks. Need to test them.
 
     public Vector3 moveTarget;
     public GameObject targetObject;
@@ -58,6 +63,7 @@ public class Enemy : MonoBehaviour {
     public Transform TargetMarker;
     public Transform[] path;
     public int pathIndex = 0;
+    public bool pathEnded = false;
 
     public Weapon weapon;
 
@@ -65,6 +71,7 @@ public class Enemy : MonoBehaviour {
     public float timeOfIntercept;
     //public Transform plunderTarget; // should this be a Stockpile (instead of a transform)?
     public GameObject hostileTarget;
+    public bool canSeeHostileTarget = false;
 
     int currentInventory;
     int maxInventory = 10;
@@ -119,9 +126,12 @@ public class Enemy : MonoBehaviour {
         At(searchOnTrain, plunder, HasPlunderTarget());
         At(searchOnTrain, attack, HasHostileTarget());
         At(attack, searchOnTrain, HostileNoLongerExists());
-        At(attack, investigate, HostileOutOfSight());
+        At(attack, investigate, HostileOutOfSight());   // not sure if investigate should exist.
         At(plunder, disembark, InventoryFullOfLoot());
 
+        At(attack, searchOnTrain, LostHostileTarget()); // maybe want this?
+        //At(attack, something, NotOnTrain());          // what happens if you're no longer on the train while in the attack state?
+        // also, you can't currently attack players while they're off the train
 
         // set base state
         _stateMachine.SetState(search);
@@ -143,7 +153,7 @@ public class Enemy : MonoBehaviour {
             }
             return false;
         };
-        // which OnTrain is more trustworthy? Both for redundancy
+        // which OnTrain is more trustworthy? Both for redundancy?
         //Func<bool> OnTrain() => () => onTrain;
         Func<bool> OnTrain() => () => transform.parent.CompareTag("Train");
         Func<bool> HasPlunderTarget() => () => OnTrain()() && plunderTarget != null;
@@ -151,8 +161,13 @@ public class Enemy : MonoBehaviour {
         // don't necessarily need to be on the train to attack, but this enemy does
         // other types of enemies could extend this and change the requirement
         Func<bool> HostileNoLongerExists() => () => hostileTarget == null;
-        Func<bool> HostileOutOfSight() => () => !CanSee(hostileTarget);
+        //Func<bool> HostileOutOfSight() => () => !CanSee(hostileTarget); // using a different method than this one. Either use that method or retool this one to work
+        Func<bool> HostileOutOfSight() => () => !canSeeHostileTarget; // using a different method than this one. Either use that method or retool this one to work
         Func<bool> InventoryFullOfLoot() => () => currentInventory >= maxInventory;
+
+        //unused but may be helpful
+        Func<bool> AtEndOfPath() => () => pathEnded;
+        Func<bool> LostHostileTarget() => () => AtEndOfPath()() && HostileOutOfSight()();
 
     }
 
@@ -287,6 +302,12 @@ public class Enemy : MonoBehaviour {
                         {
                             pathIndex++;
                         }
+                        else
+                        {
+                            // at end of path
+                            // maybe there should be an event?
+                            pathEnded = true;
+                        }
                     }
                 }
             }
@@ -322,9 +343,38 @@ public class Enemy : MonoBehaviour {
         //lookTarget = lookPos;
     }
 
-    bool CanSee(GameObject lookTarget)
+    public float GetSightDistance(GameObject lookTarget)
+    {
+        // can you see target and how far away is it?
+
+        Vector3 origin = transform.position; // +eye pos
+        Vector3 direction = lookTarget.transform.position - transform.position;
+        RaycastHit hit;
+        float maxDist = 100; // max sight distance
+        // should only return a hit if it hits a damageable object first
+        //LayerMask mask = LayerMask.NameToLayer("Damageable");
+        // Should I use the layer of lookTarget? Seems to make sense
+        LayerMask targetMask = lookTarget.layer;
+
+
+        // seeing a target is more than just seeing the center of them. Fire multiple rays at the whole width of the target?
+        // maybe you also need to see a minimum amount of them. i.e. not just see one pixel of their shoulder.
+        if (Physics.Raycast(origin, direction, out hit, maxDist, targetMask))
+        { 
+            // does it return 0 if it didn't hit the target? Like if it hit a wall before the player
+            return hit.distance;
+        }
+
+        // fail state if you can't see it
+        return -1;
+    }
+
+    public bool CanSee(GameObject lookTarget)
     {
         //if(raycast)
+
+
+
         return true;
     }
 
@@ -334,11 +384,21 @@ public class Enemy : MonoBehaviour {
         moveTarget = trainRZPoint;
     }
 
+    public void HoldPosition()
+    {
+        Transform[] myTrans = new Transform[1];
+        myTrans[0] = transform;
+        path = myTrans;
+        // just wanted the agent to stand still
+    }
+
     public void SetMoveTarget(Vector3 targetPos)
     {
         // how do I check that I'm not just calculating the same path every frame?
         //if(targetPos != currentTargetPos)
         path = trainEngine.navGraph.FindPath(transform.position, targetPos);
+        pathEnded = false;
+        pathIndex = 0;
         if(path == null)
         {
             // this means the targetPos is not on the graph
@@ -395,7 +455,7 @@ public class Enemy : MonoBehaviour {
         }
     }
 
-    void Attack()
+    public void Attack()
     {
         weapon.Attack();
     }

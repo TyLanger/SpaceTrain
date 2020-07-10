@@ -32,6 +32,14 @@ public class Train : MonoBehaviour {
     //public Delegate Reminder();
     public NavGraph navGraph;
 
+    // Not sure if I need the local sets or not
+    //HashSet<GameObject> localFriendlySet;              // set of friendlies (players) on this train car
+    static HashSet<GameObject> trainWideFriendlySet;     // all players on the train(over multiple cars)
+    //HashSet<GameObject> localHostileSet;               // Same for hostiles(AI-controlled enemies)
+    static HashSet<GameObject> trainWideHostileSet;
+
+
+
     // Boarding Testing
     float testTime = 4;
 
@@ -58,7 +66,7 @@ public class Train : MonoBehaviour {
     void TestBoarding()
     {
         //testing
-        Vector3[] testPoints = GetBoardingLocationsInTime(testTime);
+        (Vector3[] testPoints, _) = GetBoardingLocationsInTime(testTime);
         
         foreach (var item in testPoints)
         {
@@ -153,6 +161,80 @@ public class Train : MonoBehaviour {
             OnBoardable += reminderMethod;
             return false;
         }
+    }
+
+    /// <summary>
+    ///  Call this when you board a train car. Self is your gameobject.
+    ///  
+    /// </summary>
+    /// <param name="self"></param>
+    public void BoardedTrain(GameObject self)
+    {
+        // when something enters the train, add it to the collection of things on the train
+        // check if the thing is friend or enemy
+
+        // should friendliness be a parameter?
+
+        // if it has an enemy component, assume it's a hostile
+        if(self.GetComponent<Enemy>() != null)
+        {
+            if(!trainWideHostileSet.Contains(self))
+            {   
+                trainWideHostileSet.Add(self);
+            }
+            /*
+            if(!localHostileSet.Contains(self))
+            {
+                localHostileSet.Add(self);
+            }*/
+        }
+        // if it has a player component, assume it's a friendly
+        else if(self.GetComponent<Player>() != null)
+        {
+            if (!trainWideFriendlySet.Contains(self))
+            {
+                trainWideFriendlySet.Add(self);
+            }
+            /*
+            if (!localFriendlySet.Contains(self))
+            {
+                localFriendlySet.Add(self);
+            }*/
+        }
+    }
+
+    /// <summary>
+    /// Call when you get off the train (onto the ground). Self is your gameObject
+    /// </summary>
+    /// <param name="self"></param>
+    public void LeaveTrain(GameObject self)
+    {
+        // maybe this isn't a method to call, because it may be forgotten to be called.
+        // How can I make it forced? attach this to where the agents swap their parents?
+
+        //this method is for disembarking the train (onto the ground)
+
+        // if it has an enemy component, assume it's a hostile
+        if (self.GetComponent<Enemy>() != null)
+        {
+            if (!trainWideHostileSet.Contains(self))
+            {
+                trainWideHostileSet.Remove(self);
+            }
+        }
+        // if it has a player component, assume it's a friendly
+        else if (self.GetComponent<Player>() != null)
+        { 
+            if (!trainWideFriendlySet.Contains(self))
+            {
+                trainWideFriendlySet.Remove(self);
+            }
+        }
+    }
+
+    public HashSet<GameObject> GetAllFriendlyTargets()
+    {
+        return trainWideFriendlySet;
     }
 
     public (Vector3[], BoardingLink[]) GetBoardingLocationsInTime(float t, bool rightSide = true)
