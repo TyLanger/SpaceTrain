@@ -1,5 +1,4 @@
-
-
+using UnityEngine;
 
 internal class InvestigateHostile : IState
 {
@@ -34,8 +33,10 @@ internal class InvestigateHostile : IState
 
 	public void OnEnter()
 	{
-		//_enemy.SetMoveTarget(_enemy.hostileLastPosition);
-	}
+        Debug.Log("Entered " + this);
+
+        //_enemy.SetMoveTarget(_enemy.hostileLastPosition);
+    }
 
     public void OnExit() { }
 }

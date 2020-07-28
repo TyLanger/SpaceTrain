@@ -25,10 +25,13 @@ public class Train : MonoBehaviour {
     float frontWheelDistanceOffset;
     float frontWheelHeightOffset;
 
+    int trainIndex; // which car you are on the train
+
     // Boarding
     public BoardingLink[] leftLinks;
     public BoardingLink[] rightLinks;
     public event Action OnBoardable;
+    public event Action OnBoardableEarly; 
     //public Delegate Reminder();
     public NavGraph navGraph;
 
@@ -47,6 +50,18 @@ public class Train : MonoBehaviour {
     Vector3 newTrainPos;
     Vector3 newFrontPos;
     Vector3 newEndPos;
+
+    void Awake()
+    {
+        if (trainWideFriendlySet == null)
+        {
+            trainWideFriendlySet = new HashSet<GameObject>();
+        }
+        if (trainWideHostileSet == null)
+        {
+            trainWideHostileSet = new HashSet<GameObject>();
+        }
+    }
 
     // Use this for initialization
     void Start () {
@@ -109,15 +124,25 @@ public class Train : MonoBehaviour {
             {
                 // can't be boarded until the reare wheels are on the track
                 // now they are so tell things that are waiting that you can be boarded
+                if (OnBoardableEarly != null)
+                {
+                    OnBoardableEarly();
+                }
                 if (OnBoardable != null)
                 {
                     OnBoardable();
+                    Debug.Log(gameObject + " is boardable", gameObject);
                 }
             }
             rearPathTarget = path.GetPoint(rearWheelIndex);
         }
 
         //transform.forward = Vector3.LerpUnclamped(transform.forward, pathTarget - transform.position, currentSpeed * rotationMultiplier);
+    }
+
+    public void SetTrainIndex(int index)
+    {
+        trainIndex = index;
     }
 
     public Vector3 PositionInTime(float t)
@@ -148,7 +173,7 @@ public class Train : MonoBehaviour {
         */
     }
 
-    public bool CanBoard(Action reminderMethod)
+    public bool CanBoard(Action reminderMethod, bool needEarly = false)
     {
         // only allow things to try to board if the rear wheel is on the track
         if (rearWheelIndex > 0)
@@ -158,7 +183,25 @@ public class Train : MonoBehaviour {
         else
         {
             // if not boardable, add the reminderMethod to be called when it is boardable
-            OnBoardable += reminderMethod;
+            // Early
+            // was having trouble with the train manager and the AI beoth needing to know when the train was boardable.
+            // They both called CanBoard and used the callback
+            // but then the AI uses a method in trainManager that needed to know when the train was boardable
+            // so the info wasn't updated when the ai needed it, causing errors.
+            // this is my stupid workaround
+            if (needEarly)
+            {
+                OnBoardableEarly -= reminderMethod;
+                OnBoardableEarly += reminderMethod;
+            }
+            else
+            {
+                if (reminderMethod != null) // Do I need this?
+                {
+                    OnBoardable -= reminderMethod;
+                    OnBoardable += reminderMethod;
+                }
+            }
             return false;
         }
     }
@@ -194,6 +237,7 @@ public class Train : MonoBehaviour {
             if (!trainWideFriendlySet.Contains(self))
             {
                 trainWideFriendlySet.Add(self);
+                Debug.Log("Added a friendly");
             }
             /*
             if (!localFriendlySet.Contains(self))

@@ -1,5 +1,7 @@
 
 
+using UnityEngine;
+
 internal class MoveToRZPoint : IState
 {
 	
@@ -22,10 +24,11 @@ internal class MoveToRZPoint : IState
         // besides, the enemy already knows its own trainRZPoint
         // should this be:
         _enemy.StartMovingToRZPoint();
-		
-	}
-	
-	public void OnExit() {
+        Debug.Log("Entered "+this);
+
+    }
+
+    public void OnExit() {
         // if you leave this, the rz point is dirty and no longer good
         // will need to find a new rz point in order to swap back here
         _enemy.hasTrainRZPoint = false;

@@ -14,6 +14,7 @@ public class Enemy : MonoBehaviour {
     Vector3 respawnPoint;
     bool alive = true;
 
+    public bool usingNewStateMachine = true;
 
     public float moveSpeed = 0.1f;
     // the range where it will find new targets to attack
@@ -53,6 +54,8 @@ public class Enemy : MonoBehaviour {
     public Vector3 trainRZPoint; // point you have to go to to get on the train
     public bool hasTrainRZPoint = false;
     internal float maxTimeToIntercept = 0;
+    bool interceptSuccessful;
+    int numBoardableTrainsAtIntercept;
 
     public Train trainEngine;
     public event System.Action OnTrainBoarded;
@@ -86,7 +89,7 @@ public class Enemy : MonoBehaviour {
         {
             moveTarget = transform.position;
 
-            Invoke("InterceptTrain", 0.5f);
+            //Invoke("InterceptTrain", 0.5f);
         }
         else
         {
@@ -102,7 +105,7 @@ public class Enemy : MonoBehaviour {
     }
 
     // Rename to Awake when it all works
-    void Awakes()
+    void Awake()
     {
         _stateMachine = new StateMachine();
 
@@ -122,6 +125,7 @@ public class Enemy : MonoBehaviour {
         At(search, moveToTrain, HasTrainRZPoint());
         At(moveToTrain, board, CanBoard());
         At(moveToTrain, search, MissedWindow());
+        At(moveToTrain, search, NewTrainsNowBoardable());
         At(board, searchOnTrain, OnTrain());
         At(searchOnTrain, plunder, HasPlunderTarget());
         At(searchOnTrain, attack, HasHostileTarget());
@@ -142,20 +146,35 @@ public class Enemy : MonoBehaviour {
         // assuming rzPoint being all 0s means it hasn't been set yet
         //TODO: have it expire. After you swap states, it is probably no longer relevent
         Func<bool> HasTrainRZPoint() => () => hasTrainRZPoint;
-        Func<bool> CanBoard() => () => HasTrainRZPoint()() && (Vector3.Distance(transform.position, trainRZPoint) < 1f);
+        // you have a rz point AND you're at it OR you're not at the rz point yet, but you are close enough to the boarding link. Maybe don't need the second compare
+        Func<bool> CanBoard() => () => HasTrainRZPoint()() && ((Vector3.Distance(transform.position, trainRZPoint) < TrainBoardDist)); //|| (Vector3.Distance(transform.position, TargetBoardingLink.groundPoint.position) < TrainBoardDist));
         Func<bool> MissedWindow() => () =>
         {
             // time of intercept should be calculated when the intercept is first calculated (but it's not ATM)
             float predictedTimeRemaining = Vector3.Distance(transform.position, trainRZPoint) * moveSpeed;
             if (Time.time + predictedTimeRemaining > timeOfIntercept)
             {
-                return true;
+                return false; // return true; // Does not work ATM. Change back to true when it does
+            }
+            return false;
+        };
+        Func<bool> NewTrainsNowBoardable() => () =>
+        {
+            if(!interceptSuccessful)
+            {
+                if(TrainManager.Instance.indexBoardable > numBoardableTrainsAtIntercept)
+                {
+                    // try to find a intercept again. There are more available trains this time
+                    // should probably also put a check for how many trains you actually want to check.
+                    // if you're only checking 1 train back, does it matter if train 5,6,7,8,9 are now boardable?
+                    return true;
+                }
             }
             return false;
         };
         // which OnTrain is more trustworthy? Both for redundancy?
         //Func<bool> OnTrain() => () => onTrain;
-        Func<bool> OnTrain() => () => transform.parent.CompareTag("Train");
+        Func<bool> OnTrain() => () => transform.parent != null && transform.parent.CompareTag("Train");
         Func<bool> HasPlunderTarget() => () => OnTrain()() && plunderTarget != null;
         Func<bool> HasHostileTarget() => () => OnTrain()() && hostileTarget != null;
         // don't necessarily need to be on the train to attack, but this enemy does
@@ -173,7 +192,7 @@ public class Enemy : MonoBehaviour {
 
     void Update()
     {
-        //_stateMachine.Tick();
+        _stateMachine.Tick();
     }
 
     // Update is called once per frame
@@ -257,48 +276,22 @@ public class Enemy : MonoBehaviour {
         #endregion STATEMACHINE
 
 
-        // target is found when a target from the list is within aggro range
-        if (targetFound)
+        if (usingNewStateMachine)
         {
-            if (TargetMarker != null)
-            {
-                TargetMarker.position = targetObject.transform.position;
-            }
+            /// Movement
+            /// Always just move towards move target
+            /// if you have a path, set move target to the next link on the path
+            /// If you don't have a path, the AI will set your move target. So just follow whatever you have
             
-            // Train is on layer "Train"
-            // Player is on layer "Damageable"
-            // Is there a reason they should be different layers? I don't know if they should or shouldn't be
-            // When the enemy is chasing the player and the player puts the train in between them, the enemy fires a ray towards the player and hits the train
-            // so it attacks the train even though it's trying to find the player (and it can't path find yet so it just moves straight towards the player)
-            RaycastHit hit;
-            // if you can see your target and it's within attack range, attack it
-            if(Physics.Raycast(transform.position, (targetObject.transform.position - transform.position).normalized, out hit, attackRange, LayerMask.GetMask("Train") | LayerMask.GetMask("Damageable")))
+            if(path != null && !pathEnded)
             {
-                
-                if(hit.distance < attackRange)
+                if (pathIndex < path.Length)
                 {
-                    Attack();
-                }
-            }
-
-            if (canMove)
-            {
-                if (path == null)
-                {
-                    transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
-                }
-                else
-                {
-                    // move via the A* path instead
-                    transform.position = Vector3.MoveTowards(transform.position, path[pathIndex].position, moveSpeed);
-                    // < 1f is arbitrary
-                    // it's just close to the point, but doesn't have to be right on it
-                    // instead of distance, being able to see the next point might be a better solution
-                    // needs to be larger because the point is on the ground, but measures to the center of the agent
+                    moveTarget = path[pathIndex].position;
+                    // are you close to the node? If so, move on to the next node
                     if (Vector3.Distance(transform.position, path[pathIndex].position) < 1f)
                     {
-                        // watch for oout of bounds
-                        if (pathIndex < path.Length-1)
+                        if (pathIndex < path.Length - 1)
                         {
                             pathIndex++;
                         }
@@ -311,29 +304,108 @@ public class Enemy : MonoBehaviour {
                     }
                 }
             }
-            // face where you're going
-            // should be towards the direction you're facing while pathing towards the target
-            transform.forward = targetObject.transform.position - transform.position;
-            if(weapon != null)
+
+            transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
+
+            /// facing
+            /// Face where you're moving
+            /// or where you're aiming if you have a hostile target
+            /// AttackHostile sets the canSeeHostileTarget flag
+            if(canSeeHostileTarget)
             {
-                weapon.UpdateAimPos(targetObject.transform.position);
+                //transform.forward = hostileTarget.transform.position - transform.position;
+                if (weapon != null)
+                {
+                    weapon.UpdateAimPos(hostileTarget.transform.position);
+                }
             }
+            else
+            {
+                //transform.forward = moveTarget - transform.position;
+            }
+
+
         }
         else
         {
-            if (TargetMarker != null)
+            // target is found when a target from the list is within aggro range
+            if (targetFound)
             {
-                TargetMarker.position = moveTarget;
-            }
+                if (TargetMarker != null)
+                {
+                    TargetMarker.position = targetObject.transform.position;
+                }
 
-            if (canMove)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
+                // Train is on layer "Train"
+                // Player is on layer "Damageable"
+                // Is there a reason they should be different layers? I don't know if they should or shouldn't be
+                // When the enemy is chasing the player and the player puts the train in between them, the enemy fires a ray towards the player and hits the train
+                // so it attacks the train even though it's trying to find the player (and it can't path find yet so it just moves straight towards the player)
+                RaycastHit hit;
+                // if you can see your target and it's within attack range, attack it
+                if (Physics.Raycast(transform.position, (targetObject.transform.position - transform.position).normalized, out hit, attackRange, LayerMask.GetMask("Train") | LayerMask.GetMask("Damageable")))
+                {
+
+                    if (hit.distance < attackRange)
+                    {
+                        Attack();
+                    }
+                }
+
+                if (canMove)
+                {
+                    if (path == null)
+                    {
+                        transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
+                    }
+                    else
+                    {
+                        // move via the A* path instead
+                        transform.position = Vector3.MoveTowards(transform.position, path[pathIndex].position, moveSpeed);
+                        // < 1f is arbitrary
+                        // it's just close to the point, but doesn't have to be right on it
+                        // instead of distance, being able to see the next point might be a better solution
+                        // needs to be larger because the point is on the ground, but measures to the center of the agent
+                        if (Vector3.Distance(transform.position, path[pathIndex].position) < 1f)
+                        {
+                            // watch for oout of bounds
+                            if (pathIndex < path.Length - 1)
+                            {
+                                pathIndex++;
+                            }
+                            else
+                            {
+                                // at end of path
+                                // maybe there should be an event?
+                                pathEnded = true;
+                            }
+                        }
+                    }
+                }
+                // face where you're going
+                // should be towards the direction you're facing while pathing towards the target
+                transform.forward = targetObject.transform.position - transform.position;
+                if (weapon != null)
+                {
+                    weapon.UpdateAimPos(targetObject.transform.position);
+                }
             }
-            // face where you're going
-            if (moveTarget != transform.position)
+            else
             {
-                transform.forward = moveTarget - transform.position;
+                if (TargetMarker != null)
+                {
+                    TargetMarker.position = moveTarget;
+                }
+
+                if (canMove)
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
+                }
+                // face where you're going
+                if (moveTarget != transform.position)
+                {
+                    transform.forward = moveTarget - transform.position;
+                }
             }
         }
     }
@@ -347,7 +419,7 @@ public class Enemy : MonoBehaviour {
     {
         // can you see target and how far away is it?
 
-        Vector3 origin = transform.position; // +eye pos
+        Vector3 origin = transform.position + Vector3.up; // +eye pos
         Vector3 direction = lookTarget.transform.position - transform.position;
         RaycastHit hit;
         float maxDist = 100; // max sight distance
@@ -524,50 +596,36 @@ public class Enemy : MonoBehaviour {
             Debug.Log(trainEngine.name + " is not ready to board");
             return;
         }
+        
+        InterceptInfo info = TrainManager.Instance.TryInterceptTrain(trainEngine, 1, 1, 10, 1, transform.position, moveSpeed);
 
-        Vector3[] boardingPoints;
-        BoardingLink[] boardingLinks;
-        float closestDst = 0;
-        float currentDst = 0;
-
-
-        // Finds A close enough boarding point
-        // not THE closest boarding point yet
-        for (int t = 5; t <= 20; t += 5)
+        if(info.train == null)
         {
-            (boardingPoints, boardingLinks) = trainEngine.GetBoardingLocationsInTime(t);
-            for (int i = 0; i < boardingPoints.Length; i++)
+            Debug.Log("No train info.");
+            //info = TrainManager.Instance.TryInterceptTrain(trainEngine, 1, 5, 25, 5, moveSpeed);
+        }
+
+        trainRZPoint = info.position;
+        trainEngine = info.train;
+        TargetBoardingLink = info.link;
+        hasTrainRZPoint = true;
+        interceptSuccessful = true;
+
+        if (!info.successful)
+        {
+            // success being false means you didn't find an intercept and are instead going as close as you can
+            // need to try again to find an intercept
+            // wait some time.
+            if(!info.allTrainsChecked)
             {
-                currentDst = Vector3.Distance(transform.position, boardingPoints[i]);
-                // x/ time.fixedDeltaTime is the number of fixed updates there are in x seconds
-                if (currentDst < moveSpeed * (t/Time.fixedDeltaTime))
-                {
-                    trainRZPoint = boardingPoints[i];
-                    TargetBoardingLink = boardingLinks[i];
-                    //moveTarget = boardingPoints[i]; // move target is set by MoveToRZPoint state
-                    Debug.Log(gameObject.name + ": Successful Boarding at time = " + t);
-                    hasTrainRZPoint = true;
-                    return;
-                }
-                else
-                {
-                    if(currentDst < closestDst || closestDst == 0)
-                    {
-                        closestDst = currentDst;
-                        trainRZPoint = boardingPoints[i];
-                        TargetBoardingLink = boardingLinks[i];
-                        //moveTarget = boardingPoints[i];
-                    }
-                }
+                interceptSuccessful = false;
+                numBoardableTrainsAtIntercept = TrainManager.Instance.indexBoardable;
             }
         }
-        hasTrainRZPoint = true;
-        Debug.Log(gameObject.name + ": Didn't find boarding; moving to closest");
     }
 
     internal void BoardTrain()
     {
-        // currently handled in OnTriggerEnter()
         transform.position = TargetBoardingLink.GetOnBoardPosition();
         OnTrainBoarded?.Invoke();
         onTrain = true;
@@ -649,6 +707,7 @@ public class Enemy : MonoBehaviour {
         if (col.transform.CompareTag("Train") && transform.parent != col.transform)
         {
             transform.parent = col.transform;
+            col.gameObject.GetComponent<Train>().BoardedTrain(gameObject);
         }
     }
 

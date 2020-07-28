@@ -27,15 +27,17 @@ internal class DisembarkTrain : IState
 
 	public void OnEnter()
 	{
-		// find nearest point where you can get off
-		//Vector3 homeDepot;
-		// path to each boarding point
-		// path from each boarding point to the home depot (where you drop off loot)
-		
-		// Easiest way is just to jump off the train at the nearest spot then run off the screen
-		// pick the boarding point that is linearly closest and on the same train car. Probably right most of the time
-		
-		Vector3[] boardingPoints =  _enemy.GetDisembarkPointsAsPositions();
+        Debug.Log("Entered " + this);
+
+        // find nearest point where you can get off
+        //Vector3 homeDepot;
+        // path to each boarding point
+        // path from each boarding point to the home depot (where you drop off loot)
+
+        // Easiest way is just to jump off the train at the nearest spot then run off the screen
+        // pick the boarding point that is linearly closest and on the same train car. Probably right most of the time
+
+        Vector3[] boardingPoints =  _enemy.GetDisembarkPointsAsPositions();
         Vector3 closestPoint = _enemy.transform.position; // If I don't find a link, move to current pos
 		float shortestDist = 1000000;
 		foreach(Vector3 v in boardingPoints)

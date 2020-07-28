@@ -1,5 +1,7 @@
 
 
+using UnityEngine;
+
 internal class AttackHostile : IState
 {
 	
@@ -94,16 +96,21 @@ internal class AttackHostile : IState
 	
 	public void OnEnter()
 	{
-		// pathfind to get near the target
+        Debug.Log("Entered " + this);
+
+        // pathfind to get near the target
         // Do I path immediately or handle that in tick?
 
         // might be a good idea to recache some variables.
         // stuff like aggro range and attack range.
         // it's not unheard of to have them change. Maybe the enemy has swapped weapons since last time it was in this state
         // maybe caching the enemy is enough
-		
-	}
 
-    public void OnExit() { }
+    }
+
+    public void OnExit() {
+        _enemy.canSeeHostileTarget = false; // not necessarily true, but probably safer
+        // if you're moving into another state where you want to look at your target, it will handle it. Default is look where you're moving
+    }
 	
 }

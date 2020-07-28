@@ -4,8 +4,8 @@ internal class SearchForTrainIntercept : IState
 {
 	private readonly Enemy _enemy;
 
-    private float maxWaitTime = 5; // only wait for the train to start moving for 5s
-    private float timeStartedWaiting = 0;
+    private float maxWaitTime = 25; // only wait for the train to start moving for 25s
+    private float timeStartedWaiting = 100000;
 	
 	public SearchForTrainIntercept(Enemy enemy)
 	{
@@ -15,13 +15,15 @@ internal class SearchForTrainIntercept : IState
 	
 	public void Tick()
 	{
-		if(timeStartedWaiting + maxWaitTime > Time.time)
+		if(timeStartedWaiting + maxWaitTime < Time.time)
         {
             Debug.Log("Waited for train to move too long. Stuck in SearchForTrainIntercept state.");
             // waited too long
             // call a method to get this AI to change states
             //_enemy.WaitedForTrainTooLong();
         }
+
+        //_enemy.InterceptTrain();
 	}
 	
 	private void ChooseNearestTrain()
@@ -71,6 +73,7 @@ internal class SearchForTrainIntercept : IState
 	
 	public void OnEnter() {
 		ChooseNearestTrain();
+        Debug.Log("Entered Search for Train Intercept");
 	}
 	public void OnExit() {}
 }

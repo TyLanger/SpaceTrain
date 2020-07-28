@@ -93,6 +93,9 @@ public class SearchForTargetsOnTrain : IState
 	
 	public void OnEnter() {
 
+        Debug.Log("Entered " + this);
+
+
         //start with enemies you can see
         // pick the nearest one
         // if you can't see any
@@ -101,6 +104,11 @@ public class SearchForTargetsOnTrain : IState
 
 
         HashSet<GameObject> targetSet = _enemy.trainEngine.GetAllFriendlyTargets();
+
+        if(targetSet.Count == 0)
+        {
+            Debug.Log("No friendly targets");
+        }
 
         float shortestDist = 100000;
         GameObject closestTarget = null;

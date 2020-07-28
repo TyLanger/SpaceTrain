@@ -147,6 +147,8 @@ public class Player : MonoBehaviour {
         if(col.transform.CompareTag("Train") && transform.parent != col.transform)
         {
             transform.parent = col.transform;
+            // train.boardedTrain(this);
+            col.gameObject.GetComponent<Train>()?.BoardedTrain(gameObject);
         }
     }
 }

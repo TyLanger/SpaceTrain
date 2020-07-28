@@ -46,7 +46,9 @@ internal class PlunderTrain : IState
 	
 	public void OnEnter()
 	{
-		_enemy.SetMoveTarget(_enemy.plunderTarget.transform.position);
+        Debug.Log("Entered " + this);
+
+        _enemy.SetMoveTarget(_enemy.plunderTarget.transform.position);
 	}
 	
 	public void OnExit()
