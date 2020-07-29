@@ -1268,6 +1268,8 @@ public class NavGraph : MonoBehaviour {
     {
         // assume pos is in triangle
 
+        //Debug.Log("T: "+t.v1.index+t.v2.index+t.v3.index);
+
         // helper for FindPath for finding the nearest node for the start and end points
         // saves searching every triangle again
 
@@ -1311,7 +1313,7 @@ public class NavGraph : MonoBehaviour {
         for (int i = 0; i < listOfTris.Count; i++)
         {
             Triangle t = listOfTris[i];
-            t = new Triangle(points[t.v1.index].position, points[t.v2.index].position, points[t.v3.index].position, 0, 0, 0);
+            t = new Triangle(points[t.v1.index].position, points[t.v2.index].position, points[t.v3.index].position, t.v1.index, t.v2.index, t.v3.index); // why am i making a new t? So I don't edit the original?
             // if you haven't found if the point is on the graph yet, keep checking
             // once you've found it (startOnGraph == true), don't need to check each tri anymore
             if(!startOnGraph && t.IsPointInTriangle(t, start))
@@ -1344,6 +1346,7 @@ public class NavGraph : MonoBehaviour {
         if(!startOnGraph || !endOnGraph)
         {
             Debug.Log("Start or end point not traversable. "+startOnGraph+endOnGraph);
+            //Debug.Break();
             return null;
         }
 
@@ -1457,6 +1460,9 @@ public class NavGraph : MonoBehaviour {
 
     Transform[] ReconstructPath(Node start, Node current)
     {
+        //Debug.Log("Start: " + start.transform);
+        //Debug.Log("Current: " + current.transform);
+
         List<Transform> path = new List<Transform>();
 
         // ignores the start point
@@ -1474,6 +1480,7 @@ public class NavGraph : MonoBehaviour {
         {
             pathArray[i] = path[i];
         }
+        //Debug.Log("PathCount: " + path.Count);
         return pathArray;
     }
 

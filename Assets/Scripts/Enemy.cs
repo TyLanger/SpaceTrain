@@ -27,6 +27,7 @@ public class Enemy : MonoBehaviour {
     // move until you are inside the preferred attack range and then you can stop
     // don't start moving again until you are outside the outer attack range.
     // these might be redundant for melee attacks. Need to test them.
+    bool wantToMove = true;
 
     public Vector3 moveTarget;
     public GameObject targetObject;
@@ -118,7 +119,7 @@ public class Enemy : MonoBehaviour {
         var plunder = new PlunderTrain(this);
         var disembark = new DisembarkTrain(this);
         var attack = new AttackHostile(this);
-        var investigate = new InvestigateHostile(this);
+        //var investigate = new InvestigateHostile(this);
 
         // Transitions
         // at = addTransition
@@ -130,7 +131,7 @@ public class Enemy : MonoBehaviour {
         At(searchOnTrain, plunder, HasPlunderTarget());
         At(searchOnTrain, attack, HasHostileTarget());
         At(attack, searchOnTrain, HostileNoLongerExists());
-        At(attack, investigate, HostileOutOfSight());   // not sure if investigate should exist.
+        //At(attack, investigate, HostileOutOfSight());   // not sure if investigate should exist.
         At(plunder, disembark, InventoryFullOfLoot());
 
         At(attack, searchOnTrain, LostHostileTarget()); // maybe want this?
@@ -289,7 +290,7 @@ public class Enemy : MonoBehaviour {
                 {
                     moveTarget = path[pathIndex].position;
                     // are you close to the node? If so, move on to the next node
-                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 1f)
+                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 0.65f)
                     {
                         if (pathIndex < path.Length - 1)
                         {
@@ -300,12 +301,25 @@ public class Enemy : MonoBehaviour {
                             // at end of path
                             // maybe there should be an event?
                             pathEnded = true;
+                            Debug.Log("Path Ended");
                         }
                     }
                 }
             }
+            else
+            {
+                // once the path has ended, move towards the targetMarker
+                // it is at the position of the end of the path
+                // so once you reach the end of the path, you stand still (but don't fall off the train)
+                moveTarget = TargetMarker.position;
+            }
 
-            transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
+            // wantToMove stops you from falling off the train
+            // otherwise, you keep trying to move to moveTarget (a v3) and that pos is no longer on the train
+            if (wantToMove)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
+            }
 
             /// facing
             /// Face where you're moving
@@ -419,76 +433,95 @@ public class Enemy : MonoBehaviour {
     {
         // can you see target and how far away is it?
 
-        Vector3 origin = transform.position + Vector3.up; // +eye pos
+        Vector3 origin = transform.position + Vector3.up * 0.8f; // +eye pos
         Vector3 direction = lookTarget.transform.position - transform.position;
-        RaycastHit hit;
         float maxDist = 100; // max sight distance
-        // should only return a hit if it hits a damageable object first
-        //LayerMask mask = LayerMask.NameToLayer("Damageable");
-        // Should I use the layer of lookTarget? Seems to make sense
-        LayerMask targetMask = lookTarget.layer;
 
 
         // seeing a target is more than just seeing the center of them. Fire multiple rays at the whole width of the target?
         // maybe you also need to see a minimum amount of them. i.e. not just see one pixel of their shoulder.
-        if (Physics.Raycast(origin, direction, out hit, maxDist, targetMask))
-        { 
+        //Debug.DrawRay(origin, direction, Color.blue, 5f);
+
+        if (Physics.Raycast(origin, direction, out RaycastHit hit, maxDist))
+        {
             // does it return 0 if it didn't hit the target? Like if it hit a wall before the player
-            return hit.distance;
+            if (hit.collider.gameObject.Equals(lookTarget))
+            {
+                // Only return if you hit your target
+                // if you hit a wall first, you can't see your target
+                //Debug.Log("Hit " + hit.collider.gameObject);
+                return hit.distance;
+            }
+            /*
+            else
+            {
+                Debug.Log("Target: "+lookTarget+". Hit " + hit.collider.gameObject + " instead.");
+            }
+            */
         }
+
 
         // fail state if you can't see it
         return -1;
-    }
-
-    public bool CanSee(GameObject lookTarget)
-    {
-        //if(raycast)
-
-
-
-        return true;
     }
 
     public void StartMovingToRZPoint()
     {
         // move in a straight line to the move target. Doesn't use pathfinding
         moveTarget = trainRZPoint;
+        wantToMove = true;
     }
 
     public void HoldPosition()
     {
+        //Debug.Log("Holding Position");
+        wantToMove = false;
+        /*
         Transform[] myTrans = new Transform[1];
         myTrans[0] = transform;
         path = myTrans;
+        */
         // just wanted the agent to stand still
+        // but the path immediately ends....
     }
 
     public void SetMoveTarget(Vector3 targetPos)
     {
         // how do I check that I'm not just calculating the same path every frame?
         //if(targetPos != currentTargetPos)
+        wantToMove = true;
         path = trainEngine.navGraph.FindPath(transform.position, targetPos);
         pathEnded = false;
         pathIndex = 0;
+
+        TargetMarker.position = targetPos;
+        
+        
+
         if(path == null)
         {
             // this means the targetPos is not on the graph
             // so it's on the ground where there is no path.
             // That's a big ASSume
+            Debug.Log("Why is path null?");
         }
-    }
+        else if (path.Length == 0)
+        {
+            // probably in the same tri
+            Debug.Log("Probably in the same tri");
+            moveTarget = targetPos;
+        }
+        else
+        {
+            // path exists
 
-    public void PathToTarget()
-    {
-        // calculate a path to the current target (targetObject)
-        // how can I check if the target is stationary so I don't have to calculate a new path that is the same as the old path?
-        // GetComponent<Player> suggests movement
-        // GetComponent<ShippingContainer> suggests stationary?
-        // GetComponent<IMoveable> ?
-        // Maybe keep track of the last time you changed your path. 
-        // And then make the time between paths increase as you swap paths. 
-        SetMoveTarget(targetObject.transform.position);
+            // the nodes follow the train around
+            // what difference does it make if the target marker follows the train or follows the node that follows the train?
+            // This doesn't quite work on the inbetween trains area, but neither does anything else. Players and agents move in that area too.
+            TargetMarker.parent = path[path.Length - 1];
+            path[path.Length - 1] = TargetMarker;
+        }
+
     }
 
     void Respawn()
@@ -691,11 +724,19 @@ public class Enemy : MonoBehaviour {
 
     void OnDrawGizmosSelected()
     {
+        /*
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, aggroRange);
+        */
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, outerAttackRange);
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(transform.position, preferredAttackRange);
 
     }
 

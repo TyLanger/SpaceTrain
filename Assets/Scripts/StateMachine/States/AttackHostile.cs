@@ -1,5 +1,3 @@
-
-
 using UnityEngine;
 
 internal class AttackHostile : IState
@@ -20,11 +18,10 @@ internal class AttackHostile : IState
         // Pathfind returns a node point
         // So I need to also know when to switch off the path and just go straight at the target
         // When on the last node? Second last node?
-		// stuff I care about
-		//CanSeeHostile();
-		//WithinRangeToAttack();
-		// which order do they go in? CanSee, then range. How would you check range on something you can't see?
-		
+        // stuff I care about
+        //CanSeeHostile();
+        //WithinRangeToAttack();
+        // which order do they go in? CanSee, then range. How would you check range on something you can't see?
         float dist = _enemy.GetSightDistance(_enemy.hostileTarget);
 		if(dist > 0)
 		{
@@ -41,37 +38,50 @@ internal class AttackHostile : IState
 
 
             // when not in range to attack,
-            // try to move tot he preferred range
+            // try to move to the preferred range
             // once you're there, you can stop moving
             // until you are outside the out range
             // then start moving to the preferred range again
 
-            if (madeItInsidePreferredRange)
+            // if too close
+            // should be based on radius
+            // radius of capsules is 0.5 so 2*0.5 is 1
+            if (dist > 1f)
             {
-                if (dist > _enemy.outerAttackRange)
+
+                if (madeItInsidePreferredRange)
                 {
-                    madeItInsidePreferredRange = false;
-                    _enemy.SetMoveTarget(_enemy.hostileTarget.transform.position);
+                    if (dist > _enemy.outerAttackRange) //0.5
+                    {
+                        madeItInsidePreferredRange = false;
+                        _enemy.SetMoveTarget(_enemy.hostileTarget.transform.position);
+                    }
+                    else
+                    {
+                        // stop moving
+                        _enemy.HoldPosition();
+                        //Debug.Log("inside of outer");
+                    }
                 }
                 else
                 {
-                    // stop moving
-                    // set move target to current pos?
-                    _enemy.HoldPosition();
+                    if (dist > _enemy.preferredAttackRange) //0.4
+                    {
+                        // too far away. keep trying to move closer
+                        _enemy.SetMoveTarget(_enemy.hostileTarget.transform.position);
+                    }
+                    else
+                    {
+                        // inside preferred dist
+                        //Debug.Log("Inside Preferred");
+                        madeItInsidePreferredRange = true;
+                    }
                 }
             }
             else
             {
-                if (dist > _enemy.preferredAttackRange)
-                {
-                    // too far away. keep trying to move closer
-                    _enemy.SetMoveTarget(_enemy.hostileTarget.transform.position);
-                }
-                else
-                {
-                    // inside preferred dist
-                    madeItInsidePreferredRange = true;
-                }
+                // too close
+                _enemy.HoldPosition();
             }
 
             //else if(dist )
@@ -90,13 +100,12 @@ internal class AttackHostile : IState
                 // give up on this state?
             }
 		}
-        
-		
 	}
-	
-	public void OnEnter()
+
+    public void OnEnter()
 	{
         Debug.Log("Entered " + this);
+        //Debug.Break();
 
         // pathfind to get near the target
         // Do I path immediately or handle that in tick?

@@ -95,6 +95,7 @@ public class SearchForTargetsOnTrain : IState
 
         Debug.Log("Entered " + this);
 
+        _enemy.HoldPosition(); // stand still so you don't fall off
 
         //start with enemies you can see
         // pick the nearest one
@@ -116,6 +117,7 @@ public class SearchForTargetsOnTrain : IState
         foreach (var t in targetSet)
         {
             float dist = _enemy.GetSightDistance(t);
+            //Debug.Log("Dist: " + dist);
             if(dist>0)
             {
                 if(dist < shortestDist)
@@ -131,7 +133,12 @@ public class SearchForTargetsOnTrain : IState
             // can see at least one target
             _enemy.hostileTarget = closestTarget;
         }
-
+        else
+        {
+            
+            Debug.Log("Didn't see any targets");
+        }
+        //Debug.Break();
         /* Stockpiles don't exactly exist yet
 		
 		Stockpile stockToLoot = EvaluateBestStockpileToLoot();
@@ -151,7 +158,7 @@ public class SearchForTargetsOnTrain : IState
 		
 
         */
-	}
+    }
 	public void OnExit() {}
 }
 
