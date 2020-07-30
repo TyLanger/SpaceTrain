@@ -14,14 +14,12 @@ public class Enemy : MonoBehaviour {
     Vector3 respawnPoint;
     bool alive = true;
 
-    public bool usingNewStateMachine = true;
-
     public float moveSpeed = 0.1f;
     // the range where it will find new targets to attack
     public float aggroRange = 4;
     // the range where it will attemp to atack targets
     public float attackRange = 0.5f;
-    bool canMove = true;
+    //bool canMove = true;
     public float outerAttackRange = 0.5f;
     public float preferredAttackRange = 0.5f;
     // move until you are inside the preferred attack range and then you can stop
@@ -30,16 +28,6 @@ public class Enemy : MonoBehaviour {
     bool wantToMove = true;
 
     public Vector3 moveTarget;
-    public GameObject targetObject;
-    public Vector3 targetObjectDebugViewer;
-    public Vector3 targetObjectDebugViewerLocal;
-    // can I use a setter to also change the value of target?
-    // Is this even a good idea? I just want them to point to the same thing
-    //GameObject betterTargetObject { get; set { target = this.Vector3} }
-    //Vector3 betterTarget { get { betterTargetObject.transform.position}; set; }
-    bool targetFound = false;
-    // list of all the targets the enemy could have (players, train cars)
-    public GameObject[] allTargets;
 
     // Reference to the boarding link you are trying to go to. Used by BoardTrain state
     public BoardingLink TargetBoardingLink;
@@ -62,7 +50,6 @@ public class Enemy : MonoBehaviour {
     public event System.Action OnTrainBoarded;
     public bool onTrain { get; protected set; }
     // how close the train has to be for the enemy to attempt to board it. (calculate an intercept)
-    public float boardingRange = 100;
 
     public Transform TargetMarker;
     public Transform[] path;
@@ -94,14 +81,7 @@ public class Enemy : MonoBehaviour {
         }
         else
         {
-            // temporary
-            // enemy stands still if there is no train
-            // i.e. when in the testing scene
-            moveTarget = transform.position;
-            if (allTargets.Length > 0)
-            {
-                FindTarget();
-            }
+            Debug.Log("No Train set");
         }
     }
 
@@ -119,6 +99,7 @@ public class Enemy : MonoBehaviour {
         var plunder = new PlunderTrain(this);
         var disembark = new DisembarkTrain(this);
         var attack = new AttackHostile(this);
+        var death = new Death();
         //var investigate = new InvestigateHostile(this);
 
         // Transitions
@@ -137,6 +118,12 @@ public class Enemy : MonoBehaviour {
         At(attack, searchOnTrain, LostHostileTarget()); // maybe want this?
         //At(attack, something, NotOnTrain());          // what happens if you're no longer on the train while in the attack state?
         // also, you can't currently attack players while they're off the train
+        At(death, search, Revived());
+
+        // Should I have a dead state?
+        // would probably depend how enemy death works. Ideally, would probably want to add the enemy back to an object pool.
+        // maybe go to a dead state until you respawn, where you then go to back to search
+        _stateMachine.AddAnyTransition(death, Dead());
 
         // set base state
         _stateMachine.SetState(search);
@@ -184,6 +171,8 @@ public class Enemy : MonoBehaviour {
         //Func<bool> HostileOutOfSight() => () => !CanSee(hostileTarget); // using a different method than this one. Either use that method or retool this one to work
         Func<bool> HostileOutOfSight() => () => !canSeeHostileTarget; // using a different method than this one. Either use that method or retool this one to work
         Func<bool> InventoryFullOfLoot() => () => currentInventory >= maxInventory;
+        Func<bool> Dead() => () => !alive; // respawn takes some time so this shouldn't have an issue firing. But it triggers to quickly. Enemy is already searching for an intercept before it's back alive
+        Func<bool> Revived() => () => alive;
 
         //unused but may be helpful
         Func<bool> AtEndOfPath() => () => pathEnded;
@@ -197,231 +186,76 @@ public class Enemy : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void FixedUpdate() {
+    void FixedUpdate()
+    {
         if (!alive)
             return;
 
-        if(targetObject != null)
+
+
+
+
+        /// Movement
+        /// Always just move towards move target
+        /// if you have a path, set move target to the next link on the path
+        /// If you don't have a path, the AI will set your move target. So just follow whatever you have
+
+        if (path != null && !pathEnded)
         {
-            targetObjectDebugViewer = targetObject.transform.position;
-            targetObjectDebugViewerLocal = targetObject.transform.localPosition;
-
+            if (pathIndex < path.Length)
+            {
+                moveTarget = path[pathIndex].position;
+                // are you close to the node? If so, move on to the next node
+                if (Vector3.Distance(transform.position, path[pathIndex].position) < 0.7f)
+                {
+                    if (pathIndex < path.Length - 1)
+                    {
+                        pathIndex++;
+                    }
+                    else
+                    {
+                        // at end of path
+                        // maybe there should be an event?
+                        pathEnded = true;
+                        Debug.Log("Path Ended");
+                    }
+                }
+            }
         }
-        #region STATEMACHINE
-        /*
-        // STATE MACHINE STYLE
-        // states should handle all logic. This jsut updates values
+        else
+        {
+            // once the path has ended, move towards the targetMarker
+            // it is at the position of the end of the path
+            // so once you reach the end of the path, you stand still (but don't fall off the train)
+            moveTarget = TargetMarker.position;
+        }
 
-        Vector3 lookTarget = Vector3.forward;
-        Vector3 moveTarget = Vector3.zero;
-        // does the enemy need to know what their target is?
-        // whether it is a location or the player or the train?
-        // currently use a mix of target and targetObject
-        // where target is the default and also used for positions (where no object exists) to intercept the train
-        // targetObject is used to path to the player or a train car when on board
-        // only ever call targetObject.transform.position
-        // except FindPath requires transforms.
-        // I don't think that's a technical limitation of findPath, but just how it currently is
-        // actually, it probably needs to be changed to really work with intercepting the train. That method only returns a V3 and doesn't seem like creating an object would be prudent
-        // but even when I do add A* to the ground off the train, won't the agents still want to move to a spot that isn't a node?
-        // or will there be frequent enough nodes along the tracks that they can move to the rendezvous point and a node at the same time. i.e. there exists a node that's near enough the real rz point
-
-        // chaseState.MoveTowards(target)
-        // moveTarget = target;
-
-        if(moveTarget != null)
+        // wantToMove stops you from falling off the train
+        // otherwise, you keep trying to move to moveTarget (a v3) and that pos is no longer on the train
+        if (wantToMove)
         {
             transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
         }
 
-        //except this will use A* so it will have a sequence of locations
-        // in chase state:
-        // Enemy.MoveTo(target);
-        // in here:
-        // MoveTo(Vec3 target)
-        // path = Astar.GetPath(target, current);
-        if (path != null)
+        /// facing
+        /// Face where you're moving
+        /// or where you're aiming if you have a hostile target
+        /// AttackHostile sets the canSeeHostileTarget flag
+        if (canSeeHostileTarget)
         {
-            transform.position = Vector3.MoveTowards(transform.position, path[pathIndex].position, moveSpeed);
-
-            // check if you've reached the target position
-            // if you have, start moving towards the next node
-            if (Vector3.Distance(transform.position, path[pathIndex].position) < 1f)
+            //transform.forward = hostileTarget.transform.position - transform.position;
+            if (weapon != null)
             {
-                // watch for out of bounds
-                if (pathIndex < path.Length - 1)
-                {
-                    pathIndex++;
-                }
+                weapon.UpdateAimPos(hostileTarget.transform.position);
             }
-        }
-
-        // do I need canMove?
-        // what happens if this enemy gets rooted?
-        // go to rootedState?
-        // where it sets speed to 0?
-        // should I have:
-        // if(moveSpeed > 0)
-        // does this even save any performance? Probably not
-
-        // how does the enemy attack?
-        // call attack() from AttackState?
-
-        // not necessarily always looking where you are moving
-        transform.forward = lookTarget - transform.position;
-        if (weapon != null)
-        {
-            weapon.UpdateAimPos(lookTarget);
-        }
-        */
-        #endregion STATEMACHINE
-
-
-        if (usingNewStateMachine)
-        {
-            /// Movement
-            /// Always just move towards move target
-            /// if you have a path, set move target to the next link on the path
-            /// If you don't have a path, the AI will set your move target. So just follow whatever you have
-            
-            if(path != null && !pathEnded)
-            {
-                if (pathIndex < path.Length)
-                {
-                    moveTarget = path[pathIndex].position;
-                    // are you close to the node? If so, move on to the next node
-                    if (Vector3.Distance(transform.position, path[pathIndex].position) < 0.65f)
-                    {
-                        if (pathIndex < path.Length - 1)
-                        {
-                            pathIndex++;
-                        }
-                        else
-                        {
-                            // at end of path
-                            // maybe there should be an event?
-                            pathEnded = true;
-                            Debug.Log("Path Ended");
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // once the path has ended, move towards the targetMarker
-                // it is at the position of the end of the path
-                // so once you reach the end of the path, you stand still (but don't fall off the train)
-                moveTarget = TargetMarker.position;
-            }
-
-            // wantToMove stops you from falling off the train
-            // otherwise, you keep trying to move to moveTarget (a v3) and that pos is no longer on the train
-            if (wantToMove)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
-            }
-
-            /// facing
-            /// Face where you're moving
-            /// or where you're aiming if you have a hostile target
-            /// AttackHostile sets the canSeeHostileTarget flag
-            if(canSeeHostileTarget)
-            {
-                //transform.forward = hostileTarget.transform.position - transform.position;
-                if (weapon != null)
-                {
-                    weapon.UpdateAimPos(hostileTarget.transform.position);
-                }
-            }
-            else
-            {
-                //transform.forward = moveTarget - transform.position;
-            }
-
-
         }
         else
         {
-            // target is found when a target from the list is within aggro range
-            if (targetFound)
-            {
-                if (TargetMarker != null)
-                {
-                    TargetMarker.position = targetObject.transform.position;
-                }
-
-                // Train is on layer "Train"
-                // Player is on layer "Damageable"
-                // Is there a reason they should be different layers? I don't know if they should or shouldn't be
-                // When the enemy is chasing the player and the player puts the train in between them, the enemy fires a ray towards the player and hits the train
-                // so it attacks the train even though it's trying to find the player (and it can't path find yet so it just moves straight towards the player)
-                RaycastHit hit;
-                // if you can see your target and it's within attack range, attack it
-                if (Physics.Raycast(transform.position, (targetObject.transform.position - transform.position).normalized, out hit, attackRange, LayerMask.GetMask("Train") | LayerMask.GetMask("Damageable")))
-                {
-
-                    if (hit.distance < attackRange)
-                    {
-                        Attack();
-                    }
-                }
-
-                if (canMove)
-                {
-                    if (path == null)
-                    {
-                        transform.position = Vector3.MoveTowards(transform.position, targetObject.transform.position, moveSpeed);
-                    }
-                    else
-                    {
-                        // move via the A* path instead
-                        transform.position = Vector3.MoveTowards(transform.position, path[pathIndex].position, moveSpeed);
-                        // < 1f is arbitrary
-                        // it's just close to the point, but doesn't have to be right on it
-                        // instead of distance, being able to see the next point might be a better solution
-                        // needs to be larger because the point is on the ground, but measures to the center of the agent
-                        if (Vector3.Distance(transform.position, path[pathIndex].position) < 1f)
-                        {
-                            // watch for oout of bounds
-                            if (pathIndex < path.Length - 1)
-                            {
-                                pathIndex++;
-                            }
-                            else
-                            {
-                                // at end of path
-                                // maybe there should be an event?
-                                pathEnded = true;
-                            }
-                        }
-                    }
-                }
-                // face where you're going
-                // should be towards the direction you're facing while pathing towards the target
-                transform.forward = targetObject.transform.position - transform.position;
-                if (weapon != null)
-                {
-                    weapon.UpdateAimPos(targetObject.transform.position);
-                }
-            }
-            else
-            {
-                if (TargetMarker != null)
-                {
-                    TargetMarker.position = moveTarget;
-                }
-
-                if (canMove)
-                {
-                    transform.position = Vector3.MoveTowards(transform.position, moveTarget, moveSpeed);
-                }
-                // face where you're going
-                if (moveTarget != transform.position)
-                {
-                    transform.forward = moveTarget - transform.position;
-                }
-            }
+            //transform.forward = moveTarget - transform.position;
         }
+
+
+
     }
 
     public void SetLookTarget(Vector3 lookPos)
@@ -474,15 +308,12 @@ public class Enemy : MonoBehaviour {
 
     public void HoldPosition()
     {
-        //Debug.Log("Holding Position");
         wantToMove = false;
-        /*
-        Transform[] myTrans = new Transform[1];
-        myTrans[0] = transform;
-        path = myTrans;
-        */
-        // just wanted the agent to stand still
-        // but the path immediately ends....
+    }
+
+    public void WantToMove()
+    {
+        wantToMove = true;
     }
 
     public void SetMoveTarget(Vector3 targetPos)
@@ -503,13 +334,20 @@ public class Enemy : MonoBehaviour {
             // this means the targetPos is not on the graph
             // so it's on the ground where there is no path.
             // That's a big ASSume
+            // path being null means either the start or end is not on the navgraph
             Debug.Log("Why is path null?");
         }
         else if (path.Length == 0)
         {
             // probably in the same tri
             Debug.Log("Probably in the same tri");
-            moveTarget = targetPos;
+            pathEnded = true;
+            // this is unnecessary
+            // The path isn't null, but pathEnded is true
+            // When that's the case, it defaults to setting moveTarget to the target marker position
+            // and the target marker position is targetPos as seen ^
+            //moveTarget = targetPos;
+            // basically, I can't set moveTarget. In fixedUpdate, it either gets set to the path or the targetMarker
         }
         else
         {
@@ -532,6 +370,7 @@ public class Enemy : MonoBehaviour {
         GetComponent<MeshRenderer>().enabled = true;
         GetComponent<Rigidbody>().useGravity = true;
         alive = true;
+    
     }
 
     void Die()
@@ -583,34 +422,6 @@ public class Enemy : MonoBehaviour {
                 // no health means it's open/unlocked
                 plunderTarget.remainingHealth -= 10;
                 // currentLoot += 10;
-            }
-        }
-    }
-
-    void FindTarget()
-    {
-        // is there something within attack range to attack?
-        // attack that
-        // else 
-        // find a new target and path to it
-        float shortestDst = 0;
-        float currentDst = 0;
-        for (int i = 0; i < allTargets.Length; i++)
-        {
-            currentDst = Vector3.Distance(allTargets[i].transform.position, transform.position);
-            // this will attack the last target in the list within the range
-            // if the first target is inside the aggro range and so is the 8th target, it will attack the 8th target
-            if(currentDst < aggroRange)
-            {
-                targetObject = allTargets[i];
-                //attack that
-                targetFound = true;
-            }
-            else if(currentDst < shortestDst || shortestDst == 0)
-            {
-                // if nothing within attack range, target is the closest thing
-                shortestDst = currentDst;
-                targetObject = allTargets[i];
             }
         }
     }
@@ -688,40 +499,6 @@ public class Enemy : MonoBehaviour {
         return points;
     }
 
-    /// <summary>
-    ///  Get to within attack range of the train so you can attack from a distance
-    /// </summary>
-    void ApproachTrain()
-    {
-        // Warning: outdated
-        Vector3 interceptPoint;
-        float closestDst = 0;
-        float currentDst = 0;
-
-        for (int t = 5; t < 20; t+=5)
-        {
-            interceptPoint = trainEngine.PositionInTime(t);
-            currentDst = Vector3.Distance(transform.position, interceptPoint);
-            if(currentDst+aggroRange < moveSpeed * (t/Time.fixedDeltaTime))
-            {
-                // move towards the intercept point
-                // when you get there, you should be in range to attack
-                // then the attack logic should kick in
-                //moveTarget = interceptPoint;
-                Debug.Log("Approach Successful");
-                return;
-            }
-            else
-            {
-                if(currentDst < closestDst || closestDst == 0)
-                {
-                    closestDst = currentDst;
-                    //moveTarget = interceptPoint;
-                }
-            }
-        }
-    }
-
     void OnDrawGizmosSelected()
     {
         /*
@@ -751,44 +528,4 @@ public class Enemy : MonoBehaviour {
             col.gameObject.GetComponent<Train>().BoardedTrain(gameObject);
         }
     }
-
-    /*
-    void OnTriggerEnter(Collider col)
-    {
-        if(col.CompareTag("GroundLink"))
-        {
-            BoardingLink link = col.GetComponentInParent<BoardingLink>();
-            if(link != null)
-            {
-                // teleport to the other end of the link
-                // on the train
-                transform.position = link.GetOnBoardPosition();
-                // stop moving
-                // otherwise the enemy will just try to jump off the train
-                //canMove = false;
-                OnTrainBoarded?.Invoke();
-
-                onTrain = true;
-                targetObject = trainEngine.gameObject;
-                targetFound = true;
-                FindTarget();
-
-                Debug.Log("On Train");
-                //path = trainEngine.GetComponentInChildren<NavGraph>().FindPath(transform, targetObject.transform);
-                // bad idea
-                // Train class should have a reference to the navGraph
-                // like:
-                if (trainEngine.navGraph != null)
-                {
-                    path = trainEngine.navGraph.FindPath(transform.position, targetObject.transform.position);
-                    pathIndex = 0;
-                }
-            }
-            else
-            {
-                Debug.Log("Link is null");
-            }
-        }
-    }
-    */
 }

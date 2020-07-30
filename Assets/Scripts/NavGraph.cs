@@ -1126,11 +1126,11 @@ public class NavGraph : MonoBehaviour {
             // we searched through all edges and haven't found an edge to flip, so we have a delaunay triangulation
             if(!hasFlippedEdge)
             {
-                Debug.Log("Found a delaunay triangulation");
+                //Debug.Log("Found a delaunay triangulation");
                 break;
             }
         }
-        Debug.Log("Flipped " + flippedEdges + " edges");
+        //Debug.Log("Flipped " + flippedEdges + " edges");
 
         // don't have to convert from half edges to triangle because the algorithm will modify the object
         // which belongs to the original triangles, so the triangles have the data we need

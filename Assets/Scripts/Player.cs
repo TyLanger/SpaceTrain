@@ -39,7 +39,7 @@ public class Player : MonoBehaviour {
             if(Input.GetJoystickNames().Length == 0)
             {
                 // no controller plugged in
-                Debug.Log("Trying to us controller, but no controller plugged in");
+                Debug.Log("Trying to use controller, but no controller plugged in");
                 ControllerAiming = false;
             }
             else

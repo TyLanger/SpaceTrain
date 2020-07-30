@@ -51,7 +51,7 @@ internal class AttackHostile : IState
 
                 if (madeItInsidePreferredRange)
                 {
-                    if (dist > _enemy.outerAttackRange) //0.5
+                    if (dist > _enemy.outerAttackRange) // bigger
                     {
                         madeItInsidePreferredRange = false;
                         _enemy.SetMoveTarget(_enemy.hostileTarget.transform.position);
@@ -65,7 +65,7 @@ internal class AttackHostile : IState
                 }
                 else
                 {
-                    if (dist > _enemy.preferredAttackRange) //0.4
+                    if (dist > _enemy.preferredAttackRange) // smaller
                     {
                         // too far away. keep trying to move closer
                         _enemy.SetMoveTarget(_enemy.hostileTarget.transform.position);
@@ -93,11 +93,19 @@ internal class AttackHostile : IState
             _enemy.canSeeHostileTarget = false;
 			// if you still had a path, you'll keep following the path
             // maybe you'll find your target again
-            // How do I check if you've reached the end of the path?
-            // _enemy.EndOfPathReached += someCallback()
             if(_enemy.pathEnded)
             {
                 // give up on this state?
+            }
+            else
+            {
+                // enemy may be stuck not moving.
+                // if the enemy gets within preferred range and outer range
+                // it stops moving
+                // if it's in that sweet spot when the player leaves view
+                // it won't move to the player's last spot and will just soft lock itself until it sees the player again.
+                // This isn't the 10/10 fix for this.
+                _enemy.WantToMove();
             }
 		}
 	}
