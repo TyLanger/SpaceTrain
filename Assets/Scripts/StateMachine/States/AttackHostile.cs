@@ -106,8 +106,9 @@ internal class AttackHostile : IState
                 // it won't move to the player's last spot and will just soft lock itself until it sees the player again.
                 // This isn't the 10/10 fix for this.
                 _enemy.WantToMove();
+                //_enemy.SetMoveTarget(lastKnownPosition);
             }
-		}
+        }
 	}
 
     public void OnEnter()
