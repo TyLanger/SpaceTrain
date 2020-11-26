@@ -66,6 +66,10 @@ public class Player : MonoBehaviour {
         {
             currentWeapon.TryReload();
         }
+        if(Input.GetButtonDown("Jump"))
+        {
+            Debug.Break();
+        }
 
         
         // if using a controller, aim to where the cursor is
@@ -80,6 +84,7 @@ public class Player : MonoBehaviour {
         else
         {
             // Find where the mouse is
+            // this gives where the mouse is corrected to the height of the player
             Ray cameraRay = mainCam.ScreenPointToRay(Input.mousePosition);
             Plane aimPlane = new Plane(Vector3.up, transform.position);
 
@@ -88,6 +93,32 @@ public class Player : MonoBehaviour {
             if (aimPlane.Raycast(cameraRay, out camerDist))
             {
                 aimPoint = cameraRay.GetPoint(camerDist);
+            }
+
+            // this version gives the position of the first thing it hits
+            // shoots a ray from the camera to where the mouse is
+            // so it would get the position of the ground.
+            // but it also returns the roof of the train if your mouse is there.
+            // Need some sort of mask so it just casts utnil it hits a surface
+            // these surfaces would be the floor of the train and the ground. It would ignore the roof of the train and entities.
+            // becaues the train is higher, the ray would hit it first if you were aiming at the deck of the train
+            // then I could optionally add some height so you're not aiming at the floor, but at chest height at that point.
+            GameObject objectHit;
+            Vector3 hitPoint = Vector3.zero;
+            int layerMask = 1 << LayerMask.NameToLayer("AimSurface"); // only check surfaces you are supposed to
+
+            if(Physics.Raycast(cameraRay, out RaycastHit rayHit, 10000f, layerMask))
+            {
+                objectHit = rayHit.transform.gameObject;
+                aimPoint = rayHit.point;
+                aimPoint += new Vector3(0, 0.65f, 0); // add some height
+
+                hitPoint = rayHit.point; // just for visuals
+                if (objectHit != null)
+                {
+                    Debug.DrawLine(mainCam.transform.position, hitPoint, Color.blue, 0.5f);
+                }
+                
             }
         }
 

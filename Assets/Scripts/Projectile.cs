@@ -57,11 +57,11 @@ public class Projectile : MonoBehaviour {
 
     void OnTriggerEnter(Collider col)
     {
-        if(col.CompareTag(hitTag))
+        if (col.CompareTag(hitTag))
         {
             // do damage
             Health h = col.GetComponent<Health>();
-            if(h != null)
+            if (h != null)
             {
                 //bloodSplat.SetActive(true);
                 // create the blood splat particles
@@ -74,7 +74,11 @@ public class Projectile : MonoBehaviour {
             }
             Cleanup();
         }
-        else if(col.CompareTag("Obstacle"))
+        else if (col.CompareTag("Obstacle"))
+        {
+            Cleanup();
+        }
+        else if (col.gameObject.layer == LayerMask.NameToLayer("AimSurface"))
         {
             Cleanup();
         }
