@@ -344,6 +344,8 @@ public class Path : MonoBehaviour {
         return evenPoints[evenPoints.Length - 1];
     }
 
+    /*
+     * don't do this. Multiple things may need to get a point from the path
     public Vector3 GetNextPoint()
     {
         if (pointIndex < evenPoints.Length - 1)
@@ -352,6 +354,7 @@ public class Path : MonoBehaviour {
         }
         return evenPoints[pointIndex];
     }
+    */
 
     public Vector3 GetFirstPoint()
     {

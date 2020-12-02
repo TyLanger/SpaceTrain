@@ -140,9 +140,16 @@ public class Train : MonoBehaviour {
         //transform.forward = Vector3.LerpUnclamped(transform.forward, pathTarget - transform.position, currentSpeed * rotationMultiplier);
     }
 
+    // Set which car this is in the whole train
     public void SetTrainIndex(int index)
     {
         trainIndex = index;
+    }
+
+    // Where the train is along the path
+    public int GetTrainPathIndex()
+    {
+        return frontWheelIndex;
     }
 
     public Vector3 PositionInTime(float t)

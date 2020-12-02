@@ -88,6 +88,11 @@ public class Enemy : MonoBehaviour {
     // Rename to Awake when it all works
     void Awake()
     {
+        if(trainEngine == null)
+        {
+            Debug.Log("Awake. No train");
+        }
+
         _stateMachine = new StateMachine();
 
 
@@ -227,7 +232,10 @@ public class Enemy : MonoBehaviour {
             // once the path has ended, move towards the targetMarker
             // it is at the position of the end of the path
             // so once you reach the end of the path, you stand still (but don't fall off the train)
-            moveTarget = TargetMarker.position;
+            if (TargetMarker != null)
+            {
+                moveTarget = TargetMarker.position;
+            }
         }
 
         // wantToMove stops you from falling off the train
