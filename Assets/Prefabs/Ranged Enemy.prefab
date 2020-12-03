@@ -49,7 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isMelee: 0
   fireRate: 0.2
-  bulletSpeed: 0.4
+  bulletSpeedMultiplier: 0.8
   bulletDamage: 10
   clipSize: 10
   autoReloadDelay: 1.5
@@ -607,7 +607,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f842e123f921fd34ea7561a321831915, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  respawn: 1
+  respawn: 0
   moveSpeed: 0.075
   aggroRange: 8
   attackRange: 6

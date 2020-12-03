@@ -9,7 +9,7 @@ public class RangedWeapon : Weapon {
     public float fireRate;
     float fireTimeout = 0;
 
-    public float bulletSpeed;
+    public float bulletSpeedMultiplier;
     public float bulletDamage;
 
     public int clipSize;
@@ -152,7 +152,7 @@ public class RangedWeapon : Weapon {
             numBulletsInClip--;
             fireTimeout = fireRate;
             Projectile copy = Instantiate(projectile, bulletSpawnPoint.position, Quaternion.identity) as Projectile;
-            copy.Create(bulletSpeed, transform.forward, bulletDamage);
+            copy.Create(StatsManager.Instance().BaseProjectileSpeed * bulletSpeedMultiplier, transform.forward, bulletDamage);
             //copy.Create(bulletSpeed, aimPosition - bulletSpawnPoint.position, bulletDamage);
 
             Recoil();

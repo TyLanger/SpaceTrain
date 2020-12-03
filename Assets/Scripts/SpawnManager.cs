@@ -18,7 +18,7 @@ public class SpawnManager : MonoBehaviour
     int maxNumEnemies = 15; // don't spawn more if this many already spawned
 
     // What to spawn
-    public GameObject[] enemyTypes;
+    public Enemy[] enemyTypes;
 
     // What I have spawned
     // reference to stuff I've spawned
@@ -42,7 +42,10 @@ public class SpawnManager : MonoBehaviour
         {
             timeOfNextSpawn = Time.time + timeBetweenSpawns;
             // spawn something
-            Spawn();
+            if (thingsAlive < maxNumEnemies)
+            {
+                Spawn();
+            }
         }
     }
 
@@ -64,11 +67,19 @@ public class SpawnManager : MonoBehaviour
 
         int r = Random.Range(0, enemyTypes.Length);
 
-        enemyTypes[r].SetActive(false);
-        var copy = Instantiate(enemyTypes[r], whereToSpawn, Quaternion.identity);
-        // enemy.Awake() runs before this...
-        copy.GetComponent<Enemy>().trainEngine = secondTrain; // randomize the train someday
+        // setting it to false is a hack to do stuff before Enemy.Awake()
+        // I should probably just change Awake
+        enemyTypes[r].gameObject.SetActive(false);
+        Enemy copy = (Enemy) Instantiate(enemyTypes[r], whereToSpawn, Quaternion.identity);
+        thingsAlive++;
+        copy.trainEngine = secondTrain; // randomize the train someday
+        copy.OnDeath += EntityDies;
         // add this enemy to the num enemies tracker. And track when it dies
-        copy.SetActive(true);
+        copy.gameObject.SetActive(true);
+    }
+
+    void EntityDies()
+    {
+        thingsAlive--;
     }
 }

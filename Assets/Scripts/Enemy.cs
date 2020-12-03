@@ -197,7 +197,7 @@ public class Enemy : MonoBehaviour {
             return;
 
 
-
+        moveSpeed = StatsManager.Instance().BaseMoveSpeed * StatsManager.Instance().EnemyMoveMultiplier;
 
 
         /// Movement
@@ -333,7 +333,8 @@ public class Enemy : MonoBehaviour {
         pathEnded = false;
         pathIndex = 0;
 
-        TargetMarker.position = targetPos;
+        if(TargetMarker != null)
+            TargetMarker.position = targetPos;
         
         
 

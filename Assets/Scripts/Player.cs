@@ -135,6 +135,7 @@ public class Player : MonoBehaviour {
 	void FixedUpdate () {
         if (canMove)
         {
+            moveSpeed = StatsManager.Instance().BaseMoveSpeed * StatsManager.Instance().PlayerMoveMultiplier;
             transform.position = Vector3.MoveTowards(transform.position, transform.position + new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")), moveSpeed);
         }
 

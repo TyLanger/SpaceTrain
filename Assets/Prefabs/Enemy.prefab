@@ -127,7 +127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f842e123f921fd34ea7561a321831915, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  respawn: 1
+  respawn: 0
   moveSpeed: 0.075
   aggroRange: 4
   attackRange: 1.1
