@@ -72,7 +72,7 @@ public class SpawnManager : MonoBehaviour
         enemyTypes[r].gameObject.SetActive(false);
         Enemy copy = (Enemy) Instantiate(enemyTypes[r], whereToSpawn, Quaternion.identity);
         thingsAlive++;
-        copy.trainEngine = secondTrain; // randomize the train someday
+        copy.trainEngine = headTrain; // randomize the train someday
         copy.OnDeath += EntityDies;
         // add this enemy to the num enemies tracker. And track when it dies
         copy.gameObject.SetActive(true);

@@ -131,7 +131,9 @@ public class TrainManager : MonoBehaviour
                     break;
                 }
 
-                (boardingPoints, boardingLinks) = allTrains[i].GetBoardingLocationsInTime(t);
+                // pick the right boarding links if I'm to the right side of the train. Otherwise, use the left links
+                bool rightSide = startPos.x > allTrains[i].transform.position.x;
+                (boardingPoints, boardingLinks) = allTrains[i].GetBoardingLocationsInTime(t, rightSide);
                 for (int j = 0; j < boardingPoints.Length; j++)
                 {
                     currentDst = Vector3.Distance(startPos, boardingPoints[j]);

@@ -41,7 +41,8 @@ public class Train : MonoBehaviour {
     //HashSet<GameObject> localHostileSet;               // Same for hostiles(AI-controlled enemies)
     static HashSet<GameObject> trainWideHostileSet;
 
-
+    //public GameObject floorCollider;
+    //public GameObject marker;
 
     // Boarding Testing
     float testTime = 4;
@@ -61,6 +62,29 @@ public class Train : MonoBehaviour {
         {
             trainWideHostileSet = new HashSet<GameObject>();
         }
+
+        /*
+         * This can maybe be used to populate the nav mesh automatically
+         * Without me needing to place each node and move them to the right spot
+        // what are extents?
+        if (floorCollider != null && marker != null)
+        {
+            Debug.Log("Entents: " + floorCollider.GetComponent<BoxCollider>().bounds.extents);
+
+            Vector3 center = floorCollider.GetComponent<BoxCollider>().center;
+            Vector3 extents = floorCollider.GetComponent<BoxCollider>().bounds.extents;
+            
+
+            // spawn something on each corner
+            // spawn on top front right corner
+            GameObject copy = Instantiate(marker, transform.position + center + extents, Quaternion.identity);
+            copy.transform.parent = this.transform;
+
+            // spawn on bottom back left corner (underneath the box)
+            copy = Instantiate(marker, transform.position + (center - extents), Quaternion.identity);
+            copy.transform.parent = this.transform;
+        }
+        */
     }
 
     // Use this for initialization
@@ -291,9 +315,7 @@ public class Train : MonoBehaviour {
     public (Vector3[], BoardingLink[]) GetBoardingLocationsInTime(float t, bool rightSide = true)
     {
         // train will have some spots on them for jumping aboard
-        // should be rightLinks.Length + leftLinks.Length
-        // but I only have right links at the moment
-        Vector3[] boardingSpots = new Vector3[rightLinks.Length];
+        Vector3[] boardingSpots = new Vector3[rightSide? rightLinks.Length: leftLinks.Length];
 
         float totalDist = currentSpeed * (t / Time.fixedDeltaTime);
         // can't use Train.PositionInTime() because it only uses the frontWheelIndex
@@ -329,7 +351,7 @@ public class Train : MonoBehaviour {
         // train position will be along the line from the back wheels to the front wheels. 
         // the train position is a distance from the front wheels and a certain height above them
         // these offsets are stored in frontWheelDistanceOffset and frontWheelHeightOffset
-        Vector3 trainPos = frontPt - trainForward.normalized * frontWheelDistanceOffset + new Vector3(0, frontWheelHeightOffset, 0);  
+        Vector3 trainPos = frontPt - trainForward.normalized * frontWheelDistanceOffset + new Vector3(0, frontWheelHeightOffset, 0);
 
         /*
         //testing
@@ -342,17 +364,29 @@ public class Train : MonoBehaviour {
         // check what the orientation of all the boarding points will be at the given time.
         // each link knows its position in relation to the train. Giving them the train's location and rotation at the given time,
         // they can calculate where they will be.
-        for (int i = 0; i < rightLinks.Length; i++)
+        if (rightSide)
         {
-            boardingSpots[i] = rightLinks[i].GroundPointAtPosition(trainPos, angle);
+            for (int i = 0; i < rightLinks.Length; i++)
+            {
+                boardingSpots[i] = rightLinks[i].GroundPointAtPosition(trainPos, angle);
+            }
         }
-
+        else
+        {
+            for (int i = 0; i < leftLinks.Length; i++)
+            {
+                boardingSpots[i] = leftLinks[i].GroundPointAtPosition(trainPos, angle);
+            }
+        }
         // order the points front to back left side, then front to back rights side?
         // or have a separate method of computing left and right side?
         // just a parameter?
         // enemies should know which side they're on to cut down on some calculations
+        if(rightSide)
+            return (boardingSpots, rightLinks);
+        else
+            return (boardingSpots, leftLinks);
 
-        return (boardingSpots, rightLinks);
     }
 
     void ReachedEndOfLine()
