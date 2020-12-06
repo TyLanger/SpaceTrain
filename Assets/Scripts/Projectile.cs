@@ -6,6 +6,7 @@ public class Projectile : MonoBehaviour {
 
     public float moveSpeed;
     public float maxTravelTime = 5;
+    public bool isHitScan = false;
 
     public float damage;
 
@@ -26,8 +27,10 @@ public class Projectile : MonoBehaviour {
 
     // Update is called once per frame
     void FixedUpdate () {
-
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + transform.forward, moveSpeed);
+        if (!isHitScan)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, transform.position + transform.forward, moveSpeed);
+        }
         
 
         // Raycast for collision detection?
@@ -43,6 +46,38 @@ public class Projectile : MonoBehaviour {
         transform.forward = direction;
         damage = _damage;
         
+        if(isHitScan)
+        {
+            FireHitScan();
+        }
+    }
+
+    void FireHitScan()
+    {
+        Ray r = new Ray(transform.position, transform.forward);
+        if(Physics.Raycast(r, out RaycastHit hit))
+        {
+            if(hit.transform.CompareTag(hitTag))
+            {
+                DealDamage(hit.transform.GetComponent<Health>(), hit.point, hit.transform);
+            }
+        }
+        Cleanup();
+    }
+
+    void DealDamage(Health health, Vector3 hitPosition, Transform targetTransform)
+    {
+        // Projectile: use your current positon as hitPosition
+        // Hitscan: use where the ray hit as your hitPosition
+
+        // create the blood splat particles
+        // using the position and roation of the bullet
+        // the ParticleController class should kill the particles
+        var splatCopy = Instantiate(bloodSplat, hitPosition, transform.rotation);
+        // having the blood explode straight away from the enemy looks much better than using the bullet's rotation
+        splatCopy.transform.forward = hitPosition - targetTransform.position;
+
+        health?.TakeDamage(damage);
     }
 
     void Cleanup()
@@ -63,14 +98,8 @@ public class Projectile : MonoBehaviour {
             Health h = col.GetComponent<Health>();
             if (h != null)
             {
-                //bloodSplat.SetActive(true);
-                // create the blood splat particles
-                // using the position and roation of the bullet
-                // the ParticleController class should kill the particles
-                var splatCopy = Instantiate(bloodSplat, transform.position, transform.rotation);
-                // having the blood explode straight away from the enemy looks much better than using the bullet's rotation
-                splatCopy.transform.forward = transform.position - col.transform.position;
-                h.TakeDamage(damage);
+                DealDamage(h, transform.position, col.transform);
+                
             }
             Cleanup();
         }

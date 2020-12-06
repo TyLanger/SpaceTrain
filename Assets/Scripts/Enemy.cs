@@ -85,12 +85,16 @@ public class Enemy : MonoBehaviour {
         }
     }
 
-    // Rename to Awake when it all works
-    void Awake()
+    public void Initialize()
+    {
+        StateMachineSetup();
+    }
+
+    void StateMachineSetup()
     {
         if(trainEngine == null)
         {
-            Debug.Log("Awake. No train");
+            Debug.Log("StateMachineSetup. No train");
         }
 
         _stateMachine = new StateMachine();
@@ -187,7 +191,8 @@ public class Enemy : MonoBehaviour {
 
     void Update()
     {
-        _stateMachine.Tick();
+
+        _stateMachine?.Tick();
     }
 
     // Update is called once per frame
@@ -349,7 +354,7 @@ public class Enemy : MonoBehaviour {
         else if (path.Length == 0)
         {
             // probably in the same tri
-            Debug.Log("Probably in the same tri");
+            //Debug.Log("Probably in the same tri");
             pathEnded = true;
             // this is unnecessary
             // The path isn't null, but pathEnded is true

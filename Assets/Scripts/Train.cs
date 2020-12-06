@@ -155,7 +155,7 @@ public class Train : MonoBehaviour {
                 if (OnBoardable != null)
                 {
                     OnBoardable();
-                    Debug.Log(gameObject + " is boardable", gameObject);
+                    //Debug.Log(gameObject + " is boardable", gameObject);
                 }
             }
             rearPathTarget = path.GetPoint(rearWheelIndex);
