@@ -6384,8 +6384,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyTypes:
-  - {fileID: 114781188281069444, guid: f486d59ee9cc08c43b541d05e23dd3e4, type: 3}
-  - {fileID: 114680604407815292, guid: 34057070c87e0a8449be40f47df7c70f, type: 3}
+  - {fileID: 163875371668938745, guid: 5abf9fb93bb662544b59040e59c7a93c, type: 3}
   headTrain: {fileID: 546594439}
   secondTrain: {fileID: 275113881}
 --- !u!4 &1729317697

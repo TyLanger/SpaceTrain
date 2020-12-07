@@ -58,7 +58,7 @@ public class Enemy : MonoBehaviour {
 
     public Weapon weapon;
 
-    private StateMachine _stateMachine;
+    protected StateMachine _stateMachine;
     public float timeOfIntercept;
     //public Transform plunderTarget; // should this be a Stockpile (instead of a transform)?
     public GameObject hostileTarget;
@@ -90,7 +90,7 @@ public class Enemy : MonoBehaviour {
         StateMachineSetup();
     }
 
-    void StateMachineSetup()
+    protected virtual void StateMachineSetup()
     {
         if(trainEngine == null)
         {
@@ -212,6 +212,7 @@ public class Enemy : MonoBehaviour {
 
         if (path != null && !pathEnded)
         {
+            Debug.Log("Path not null");
             if (pathIndex < path.Length)
             {
                 moveTarget = path[pathIndex].position;
@@ -443,7 +444,7 @@ public class Enemy : MonoBehaviour {
     /// <summary>
     /// Intercept the train to try to board it
     /// </summary>
-    public void InterceptTrain()
+    public virtual void InterceptTrain()
     {
         // try to get to the track ahead of the train
 
