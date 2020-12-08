@@ -138,7 +138,8 @@ MonoBehaviour:
   TargetBoardingLink: {fileID: 0}
   TrainBoardDist: 1
   lootReach: 2
-  timeBetweenPlunders: 4
+  timeBetweenPlunders: 2
+  timeOfNextPlunder: 0
   plunderTarget: {fileID: 0}
   disembarkLink: {fileID: 0}
   disembarkDistance: 1
@@ -149,10 +150,12 @@ MonoBehaviour:
   path: []
   pathIndex: 0
   pathEnded: 0
+  distToNextNode: 0
   weapon: {fileID: 114311581457616218}
   timeOfIntercept: 0
   hostileTarget: {fileID: 0}
   canSeeHostileTarget: 0
+  stateMemory: 
 --- !u!114 &114318986563723776
 MonoBehaviour:
   m_ObjectHideFlags: 0

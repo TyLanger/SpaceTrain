@@ -38,9 +38,10 @@ internal class DisembarkTrain : IState
         // Easiest way is just to jump off the train at the nearest spot then run off the screen
         // pick the boarding point that is linearly closest and on the same train car. Probably right most of the time
 
-        Vector3[] boardingPoints =  _enemy.GetDisembarkPointsAsPositions();
+        //Vector3[] boardingPoints =  _enemy.GetDisembarkPointsAsPositions();
         Vector3 closestPoint = _enemy.transform.position; // If I don't find a link, move to current pos
 		float shortestDist = 1000000;
+        /*
 		foreach(Vector3 v in boardingPoints)
 		{
 			float dist = Vector3.Distance(_enemy.transform.position, v);
@@ -50,8 +51,25 @@ internal class DisembarkTrain : IState
 				closestPoint = v;
 			}
 		}
-		
-		// path to that point
+        */
+
+
+        BoardingLink[] allLinks = _enemy.GetDisembarkLinks();
+        BoardingLink closestLink = allLinks[0];
+
+        for (int i = 0; i < allLinks.Length; i++)
+        {
+            float dist = Vector3.Distance(_enemy.transform.position, allLinks[i].trainPoint.position);
+            if(dist < shortestDist)
+            {
+                shortestDist = dist;
+                closestPoint = allLinks[i].trainPoint.position;
+                closestLink = allLinks[i];
+            }
+        }
+
+        // path to that point
+        _enemy.disembarkLink = closestLink;
 		_enemy.SetMoveTarget(closestPoint);
 
 	}

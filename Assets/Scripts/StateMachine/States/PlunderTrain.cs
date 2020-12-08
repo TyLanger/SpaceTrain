@@ -17,14 +17,15 @@ internal class PlunderTrain : IState
 	
 	public void Tick()
 	{
-		if(Vector3.Distance(_enemy.transform.position, _enemy.plunderTarget.transform.position) > _enemy.lootReach)
+		if(Vector3.Distance(_enemy.transform.position, _enemy.plunderTarget.transform.position) < _enemy.lootReach)
 		{
-			if(_nextPlunderTime >= Time.time)
+			if(_nextPlunderTime <= Time.time)
 			{
 				_nextPlunderTime = Time.time + _enemy.timeBetweenPlunders;
-				// loot
-				
-				
+                // loot
+
+                //Debug.Log("Is this running?");
+                
 				// this is kind of doing 2 things:
 				// breaking open loot stockpiles
 				// and looting the stockpiles
@@ -33,11 +34,13 @@ internal class PlunderTrain : IState
 				// ergo, these should be different states
 				if(_enemy.plunderTarget.remainingHealth > 0)
 				{
-					// break open stockpile
+                    // break open stockpile
+                    //Debug.Log("Trying to break open");
 					_enemy.BreakOpenPlunderTarget();
 				}
 				else
 				{
+                    //Debug.Log("Trying to loot");
 					_enemy.LootStockpile();
 				}
 			}

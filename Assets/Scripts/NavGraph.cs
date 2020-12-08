@@ -394,72 +394,9 @@ public class NavGraph : MonoBehaviour {
                     lastEdge = e3;
                 }
 
-
-                // Debugging
-                /*
-                if(lastEdge == null)
-                {
-                    Debug.Log("Last edge null");
-                }
-                else if(lastEdge.oppositeEdge == null)
-                {
-                    Debug.Log("Opp is null");
-                    Debug.Log(e1.oppositeEdge);
-                    Debug.Log(e2.oppositeEdge);
-                    Debug.Log(e3); // e3 itself is fine
-                    Debug.Log(e3.oppositeEdge); // e3.opp is null
-                }
-                else if(lastEdge.oppositeEdge.t == null)
-                {
-                    Debug.Log("opp t is null");
-                }
-                */
-
-                if(lastEdge.oppositeEdge == null)
-                {
-                    //Debug.Log(safety2); // fails on safety2 == 1
-
-                    Vector3 up = Vector3.up;
-
-                    // FML
-                    // the edges all come from the same triangle
-                    // so they all have the same verts
-                    // that's to be expected
-
-
-                    Debug.DrawLine(e2.v.position + up, e2.oppositeEdge.v.position + up, Color.blue, 5f);
-                    Debug.DrawLine(e1.v.position + up, e3.v.position + up, Color.red, 5f);
-                    Debug.DrawLine(e1.v.position + up, e1.oppositeEdge.v.position + up, Color.yellow, 5f);
-                    // e1.opp is the same as e3
-                    // e2.opp is e1 I think
-
-                    /*
-                    Debug.Log(e1.t.v1.position);
-                    Debug.Log(e1.t.v2.position);
-                    Debug.Log(e1.t.v3.position);
-
-                    Debug.DrawLine(e1.t.v1.position + up, e1.t.v2.position + up, Color.blue, 50f);
-                    Debug.DrawLine(e1.t.v2.position + up, e1.t.v3.position + up, Color.blue, 50f);
-                    Debug.DrawLine(e1.t.v3.position + up, e1.t.v1.position + up, Color.blue, 50f);
-
-                    
-                    Debug.Log(e2.t.v1.position);
-                    Debug.Log(e2.t.v2.position);
-                    Debug.Log(e2.t.v3.position);
-                    
-                    Debug.DrawLine(e2.t.v1.position + 2*up, e2.t.v2.position + 2*up, Color.green, 50f);
-                    Debug.DrawLine(e2.t.v2.position + 2*up, e2.t.v3.position + 2*up, Color.green, 50f);
-                    Debug.DrawLine(e2.t.v3.position + 2*up, e2.t.v1.position + 2*up, Color.green, 50f);
-                    
-                    Debug.Log(lastEdge.t.v1.position);
-                    Debug.Log(lastEdge.t.v2.position);
-                    Debug.Log(lastEdge.t.v3.position);
-                    
-                    Debug.DrawLine(e3.t.v1.position + 3*up, e3.t.v2.position + 3*up, Color.red, 50f);
-                    Debug.DrawLine(e3.t.v2.position + 3*up, e3.t.v3.position + 3*up, Color.red, 50f);
-                    Debug.DrawLine(e3.t.v3.position + 3*up, e3.t.v1.position + 3*up, Color.red, 50f);
-                    */
-                }
+                // Was getting null for lastEdge.oppositeEdge
+                // The real problem was I moved some of the navmesh nodes to a different height
+                // They need to all be on the exact same height or it breaks.
 
 
                 // jump to the next triangle by crossing the edge that intersects with the constraint

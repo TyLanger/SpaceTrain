@@ -35,6 +35,7 @@ public class Enemy : MonoBehaviour {
 
     public float lootReach = 2; // arbitrary number. How close you need to be to loot to be able to pick it up. Used by PlunderTrain state
     public float timeBetweenPlunders = 4; // arbitrary time. How often you can attempt to plunder a stockpile for loot. Used by PlunderTrain state
+    public float timeOfNextPlunder = 0;
     public Stockpile plunderTarget; // the stockpile you're trying to plunder. Used by PlunderTrain state. Set by SearchForTargetsOnTrain state
 
     public BoardingLink disembarkLink; // the link you're trying to get to in order to leave the train
@@ -55,6 +56,7 @@ public class Enemy : MonoBehaviour {
     public Transform[] path;
     public int pathIndex = 0;
     public bool pathEnded = false;
+    public float distToNextNode = 0;
 
     public Weapon weapon;
 
@@ -219,7 +221,8 @@ public class Enemy : MonoBehaviour {
             {
                 moveTarget = path[pathIndex].position;
                 // are you close to the node? If so, move on to the next node
-                if (Vector3.Distance(transform.position, path[pathIndex].position) < 0.7f)
+                distToNextNode = Vector3.Distance(transform.position, path[pathIndex].position);
+                if (distToNextNode < 1f)
                 {
                     if (pathIndex < path.Length - 1)
                     {
@@ -332,10 +335,14 @@ public class Enemy : MonoBehaviour {
         wantToMove = true;
     }
 
-    public void SetMoveTarget(Vector3 targetPos)
+    public void SetMoveTarget(Vector3 targetPos, bool debug = false)
     {
         // how do I check that I'm not just calculating the same path every frame?
         //if(targetPos != currentTargetPos)
+        if(debug)
+        {
+            Debug.Log(String.Format("Start: {0}. End: {1}", transform.position, targetPos));
+        }
         wantToMove = true;
         path = trainEngine.navGraph.FindPath(transform.position, targetPos);
         pathEnded = false;
@@ -440,7 +447,7 @@ public class Enemy : MonoBehaviour {
             if(plunderTarget.remainingHealth <= 0)
             {
                 // no health means it's open/unlocked
-                plunderTarget.remainingHealth -= 10;
+                //plunderTarget.remainingHealth -= 10;
                 plunderTarget.remainingLoot -= 10;
                 currentInventory += 10;
                 // currentLoot += 10;
@@ -502,6 +509,26 @@ public class Enemy : MonoBehaviour {
     {
         Debug.Log(gameObject + " is trying to jump off train");
         transform.position = disembarkLink.groundPoint.position; // might not be quite this easy.
+        transform.parent = null; // make this more dynamic some day. (Whenever you leave the train, lose it as a parent. No just when you leave voluntarily)
+        wantToMove = false; // change when I setup a run away/escape state
+    }
+
+    internal BoardingLink[] GetDisembarkLinks()
+    {
+        // should probably figure out what train it is on, not just use trainEngine
+        // trainEngine is the train it is given when it spawns then it doesn't really change (even if you board the train and path to a new train)
+        BoardingLink[] allLinks = new BoardingLink[trainEngine.leftLinks.Length + trainEngine.rightLinks.Length];
+
+        for (int i = 0; i < trainEngine.leftLinks.Length; i++)
+        {
+            allLinks[i] = trainEngine.leftLinks[i];
+        }
+        for (int i = 0; i < trainEngine.rightLinks.Length; i++)
+        {
+            allLinks[trainEngine.leftLinks.Length + i] = trainEngine.rightLinks[i];
+        }
+
+        return allLinks;
     }
 
     internal Vector3[] GetDisembarkPointsAsPositions()
