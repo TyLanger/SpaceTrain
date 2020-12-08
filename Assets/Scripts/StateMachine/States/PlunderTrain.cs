@@ -42,11 +42,17 @@ internal class PlunderTrain : IState
 				}
 			}
 		}
+        else
+        {
+            //_enemy.SetMoveTarget(_enemy.plunderTarget.transform.position);
+        }
 	}
 	
 	public void OnEnter()
 	{
-        Debug.Log("Entered " + this);
+        _enemy.stateMemory += this;
+
+        //Debug.Log("Entered " + this);
 
         _enemy.SetMoveTarget(_enemy.plunderTarget.transform.position);
 	}

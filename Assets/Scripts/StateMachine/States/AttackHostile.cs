@@ -113,7 +113,8 @@ internal class AttackHostile : IState
 
     public void OnEnter()
 	{
-        Debug.Log("Entered " + this);
+        _enemy.stateMemory += this;
+        //Debug.Log("Entered " + this);
         //Debug.Break();
 
         // pathfind to get near the target

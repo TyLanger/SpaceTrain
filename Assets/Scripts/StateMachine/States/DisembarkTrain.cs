@@ -27,7 +27,8 @@ internal class DisembarkTrain : IState
 
 	public void OnEnter()
 	{
-        Debug.Log("Entered " + this);
+        _enemy.stateMemory += this;
+        //Debug.Log("Entered " + this);
 
         // find nearest point where you can get off
         //Vector3 homeDepot;

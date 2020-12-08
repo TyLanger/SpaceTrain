@@ -24,7 +24,8 @@ internal class MoveToRZPoint : IState
         // besides, the enemy already knows its own trainRZPoint
         // should this be:
         _enemy.StartMovingToRZPoint();
-        Debug.Log("Entered "+this);
+        _enemy.stateMemory += this;
+        //Debug.Log("Entered "+this);
 
     }
 

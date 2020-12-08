@@ -13,13 +13,13 @@ public class SpawnManager : MonoBehaviour
     // don't spawn stuff if there are still things alive?
 
     // When to spawn
-    float timeBetweenSpawns = 3;
+    float timeBetweenSpawns = 8;
     float timeOfNextSpawn = 0;
     int maxNumEnemies = 15; // don't spawn more if this many already spawned
 
     float timeBetweenGroupSpawns = 15;
     float timeBetweenEnitiesInGroup = 1;
-    float timeOfNextGroup = 0;
+    float timeOfNextGroup = 1005;
     int sizeOfGroup = 5;
 
     int currentGroupSpawns = 0;

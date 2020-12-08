@@ -73,7 +73,8 @@ internal class SearchForTrainIntercept : IState
 	
 	public void OnEnter() {
 		ChooseNearestTrain();
-        Debug.Log("Entered Search for Train Intercept");
-	}
+        _enemy.stateMemory += this;
+        //Debug.Log("Entered Search for Train Intercept");
+    }
 	public void OnExit() {}
 }

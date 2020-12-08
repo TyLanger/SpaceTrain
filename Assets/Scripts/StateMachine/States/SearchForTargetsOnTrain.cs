@@ -6,6 +6,7 @@ public class SearchForTargetsOnTrain : IState
 {
 	
 	private readonly Enemy _enemy;
+    Stockpile bestStockpile;
 	
 	public SearchForTargetsOnTrain(Enemy enemy)
 	{
@@ -18,9 +19,9 @@ public class SearchForTargetsOnTrain : IState
 		
 	}
 	
-	private Stockpile EvaluateBestStockpileToLoot(List<Stockpile> allStockpiles)
+	private Stockpile EvaluateBestStockpileToLoot(Stockpile[] allStockpiles)
 	{
-        Stockpile bestStockpile = new Stockpile();
+        //Stockpile bestStockpile = new Stockpile();
 		
 		
 		float shortestDist = 10000;
@@ -93,7 +94,8 @@ public class SearchForTargetsOnTrain : IState
 	
 	public void OnEnter() {
 
-        Debug.Log("Entered " + this);
+        _enemy.stateMemory += this;
+        //Debug.Log("Entered " + this);
 
         _enemy.HoldPosition(); // stand still so you don't fall off
 
@@ -137,6 +139,12 @@ public class SearchForTargetsOnTrain : IState
         {
             
             Debug.Log("Didn't see any targets");
+
+            Stockpile stockToLoot = EvaluateBestStockpileToLoot(_enemy.trainEngine?.GetAllStockpiles());
+            if(stockToLoot != null)
+            {
+                _enemy.plunderTarget = stockToLoot;
+            }
         }
         //Debug.Break();
         /* Stockpiles don't exactly exist yet

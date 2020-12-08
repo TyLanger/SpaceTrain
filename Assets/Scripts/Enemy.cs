@@ -63,6 +63,8 @@ public class Enemy : MonoBehaviour {
     //public Transform plunderTarget; // should this be a Stockpile (instead of a transform)?
     public GameObject hostileTarget;
     public bool canSeeHostileTarget = false;
+    [TextArea(1,10)]
+    public string stateMemory;
 
     int currentInventory;
     int maxInventory = 10;
@@ -212,7 +214,7 @@ public class Enemy : MonoBehaviour {
 
         if (path != null && !pathEnded)
         {
-            Debug.Log("Path not null");
+            //Debug.Log("Path not null");
             if (pathIndex < path.Length)
             {
                 moveTarget = path[pathIndex].position;
@@ -228,7 +230,7 @@ public class Enemy : MonoBehaviour {
                         // at end of path
                         // maybe there should be an event?
                         pathEnded = true;
-                        Debug.Log("Path Ended");
+                        //Debug.Log("Path Ended");
                     }
                 }
             }
@@ -371,8 +373,11 @@ public class Enemy : MonoBehaviour {
             // the nodes follow the train around
             // what difference does it make if the target marker follows the train or follows the node that follows the train?
             // This doesn't quite work on the inbetween trains area, but neither does anything else. Players and agents move in that area too.
-            TargetMarker.parent = path[path.Length - 1];
-            path[path.Length - 1] = TargetMarker;
+            if (TargetMarker != null)
+            {
+                TargetMarker.parent = path[path.Length - 1];
+                path[path.Length - 1] = TargetMarker;
+            }
         }
 
     }
@@ -436,6 +441,8 @@ public class Enemy : MonoBehaviour {
             {
                 // no health means it's open/unlocked
                 plunderTarget.remainingHealth -= 10;
+                plunderTarget.remainingLoot -= 10;
+                currentInventory += 10;
                 // currentLoot += 10;
             }
         }

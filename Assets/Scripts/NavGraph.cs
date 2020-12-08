@@ -372,7 +372,7 @@ public class NavGraph : MonoBehaviour {
 
             // does this triangle include the last vertex on the constraint edge?
             // if so, we have found all edges that intersect
-            if(e1.v.position == p2 || e2.v.position == p2 || e3.v.position == p2)
+            if (e1.v.position == p2 || e2.v.position == p2 || e3.v.position == p2)
             {
                 break;
             }
@@ -381,7 +381,7 @@ public class NavGraph : MonoBehaviour {
             else
             {
                 // save the edge that intersects in case the triangle intersects with two edges
-                if(e1.oppositeEdge != lastEdge && Edge.AreLineSegmentsIntersecting(e1.v.position, e1.prevEdge.v.position, p1, p2))
+                if (e1.oppositeEdge != lastEdge && Edge.AreLineSegmentsIntersecting(e1.v.position, e1.prevEdge.v.position, p1, p2))
                 {
                     lastEdge = e1;
                 }
@@ -394,11 +394,80 @@ public class NavGraph : MonoBehaviour {
                     lastEdge = e3;
                 }
 
+
+                // Debugging
+                /*
+                if(lastEdge == null)
+                {
+                    Debug.Log("Last edge null");
+                }
+                else if(lastEdge.oppositeEdge == null)
+                {
+                    Debug.Log("Opp is null");
+                    Debug.Log(e1.oppositeEdge);
+                    Debug.Log(e2.oppositeEdge);
+                    Debug.Log(e3); // e3 itself is fine
+                    Debug.Log(e3.oppositeEdge); // e3.opp is null
+                }
+                else if(lastEdge.oppositeEdge.t == null)
+                {
+                    Debug.Log("opp t is null");
+                }
+                */
+
+                if(lastEdge.oppositeEdge == null)
+                {
+                    //Debug.Log(safety2); // fails on safety2 == 1
+
+                    Vector3 up = Vector3.up;
+
+                    // FML
+                    // the edges all come from the same triangle
+                    // so they all have the same verts
+                    // that's to be expected
+
+
+                    Debug.DrawLine(e2.v.position + up, e2.oppositeEdge.v.position + up, Color.blue, 5f);
+                    Debug.DrawLine(e1.v.position + up, e3.v.position + up, Color.red, 5f);
+                    Debug.DrawLine(e1.v.position + up, e1.oppositeEdge.v.position + up, Color.yellow, 5f);
+                    // e1.opp is the same as e3
+                    // e2.opp is e1 I think
+
+                    /*
+                    Debug.Log(e1.t.v1.position);
+                    Debug.Log(e1.t.v2.position);
+                    Debug.Log(e1.t.v3.position);
+
+                    Debug.DrawLine(e1.t.v1.position + up, e1.t.v2.position + up, Color.blue, 50f);
+                    Debug.DrawLine(e1.t.v2.position + up, e1.t.v3.position + up, Color.blue, 50f);
+                    Debug.DrawLine(e1.t.v3.position + up, e1.t.v1.position + up, Color.blue, 50f);
+
+                    
+                    Debug.Log(e2.t.v1.position);
+                    Debug.Log(e2.t.v2.position);
+                    Debug.Log(e2.t.v3.position);
+                    
+                    Debug.DrawLine(e2.t.v1.position + 2*up, e2.t.v2.position + 2*up, Color.green, 50f);
+                    Debug.DrawLine(e2.t.v2.position + 2*up, e2.t.v3.position + 2*up, Color.green, 50f);
+                    Debug.DrawLine(e2.t.v3.position + 2*up, e2.t.v1.position + 2*up, Color.green, 50f);
+                    
+                    Debug.Log(lastEdge.t.v1.position);
+                    Debug.Log(lastEdge.t.v2.position);
+                    Debug.Log(lastEdge.t.v3.position);
+                    
+                    Debug.DrawLine(e3.t.v1.position + 3*up, e3.t.v2.position + 3*up, Color.red, 50f);
+                    Debug.DrawLine(e3.t.v2.position + 3*up, e3.t.v3.position + 3*up, Color.red, 50f);
+                    Debug.DrawLine(e3.t.v3.position + 3*up, e3.t.v1.position + 3*up, Color.red, 50f);
+                    */
+                }
+
+
                 // jump to the next triangle by crossing the edge that intersects with the constraint
                 t = lastEdge.oppositeEdge.t;
 
                 // save the intersecting edge
                 intersectingEdges.Add(lastEdge);
+
             }
 
         }

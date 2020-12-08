@@ -41,6 +41,8 @@ public class Train : MonoBehaviour {
     //HashSet<GameObject> localHostileSet;               // Same for hostiles(AI-controlled enemies)
     static HashSet<GameObject> trainWideHostileSet;
 
+    public Stockpile[] Stockpiles;
+
     //public GameObject floorCollider;
     //public GameObject marker;
 
@@ -310,6 +312,11 @@ public class Train : MonoBehaviour {
     public HashSet<GameObject> GetAllFriendlyTargets()
     {
         return trainWideFriendlySet;
+    }
+
+    public Stockpile[] GetAllStockpiles()
+    {
+        return Stockpiles;
     }
 
     public (Vector3[], BoardingLink[]) GetBoardingLocationsInTime(float t, bool rightSide = true)

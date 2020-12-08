@@ -28,7 +28,8 @@ internal class BoardTrain : IState
 	}
 	
 	public void OnEnter() {
-        Debug.Log("Entered "+this);
+        _enemy.stateMemory += this;
+        //Debug.Log("Entered "+this);
     }
     public void OnExit() {}
 	
