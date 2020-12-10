@@ -35,7 +35,7 @@ public class Enemy : MonoBehaviour {
 
     public float lootReach = 2; // arbitrary number. How close you need to be to loot to be able to pick it up. Used by PlunderTrain state
     public float timeBetweenPlunders = 4; // arbitrary time. How often you can attempt to plunder a stockpile for loot. Used by PlunderTrain state
-    public float timeOfNextPlunder = 0;
+    //public float timeOfNextPlunder = 0;
     public Stockpile plunderTarget; // the stockpile you're trying to plunder. Used by PlunderTrain state. Set by SearchForTargetsOnTrain state
 
     public BoardingLink disembarkLink; // the link you're trying to get to in order to leave the train
@@ -507,10 +507,11 @@ public class Enemy : MonoBehaviour {
 
     internal void Disembark()
     {
-        Debug.Log(gameObject + " is trying to jump off train");
+        //Debug.Log(gameObject + " is trying to jump off train");
         transform.position = disembarkLink.groundPoint.position; // might not be quite this easy.
         transform.parent = null; // make this more dynamic some day. (Whenever you leave the train, lose it as a parent. No just when you leave voluntarily)
         wantToMove = false; // change when I setup a run away/escape state
+        trainEngine.LeaveTrain(gameObject);
     }
 
     internal BoardingLink[] GetDisembarkLinks()
@@ -518,6 +519,16 @@ public class Enemy : MonoBehaviour {
         // should probably figure out what train it is on, not just use trainEngine
         // trainEngine is the train it is given when it spawns then it doesn't really change (even if you board the train and path to a new train)
         BoardingLink[] allLinks = new BoardingLink[trainEngine.leftLinks.Length + trainEngine.rightLinks.Length];
+
+        // Might have fixed this when you collide with the train in OnCollisionEnter
+        /*
+        Train currentTrain = GetComponentInParent<Train>();
+
+        if(currentTrain != null)
+        {
+            trainEngine = currentTrain;
+        }
+        */
 
         for (int i = 0; i < trainEngine.leftLinks.Length; i++)
         {
@@ -574,7 +585,16 @@ public class Enemy : MonoBehaviour {
         if (col.transform.CompareTag("Train") && transform.parent != col.transform)
         {
             transform.parent = col.transform;
-            col.gameObject.GetComponent<Train>().BoardedTrain(gameObject);
+            trainEngine = col.gameObject.GetComponent<Train>();
+            trainEngine.BoardedTrain(gameObject);
+            //col.gameObject.GetComponent<Train>().BoardedTrain(gameObject);
+            
         }
+    }
+
+    void OnCollisionExit(Collision col)
+    {
+        // remove the train as your parent?
+        // WOuld one of them need to be delayed to not mess it up?
     }
 }
