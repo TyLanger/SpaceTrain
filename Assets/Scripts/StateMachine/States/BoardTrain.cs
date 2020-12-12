@@ -18,6 +18,8 @@ internal class BoardTrain : IState
 	
 	public void Tick()
 	{
+        // could move towards the link pos instead of just standing still?
+        // would still be awkward. Enemy would move towards the train, get to the train, then make a 90 turn and run the opposite direction of the train for 2 steps to board
 		if(Vector3.Distance(_enemy.transform.position, _enemy.TargetBoardingLink.groundPoint.position) < _boardDist)
 		{
 			_enemy.BoardTrain();

@@ -68,8 +68,19 @@ public class TrainManager : MonoBehaviour
         return allTrains[index];
     }
 
+    public Stockpile[] GetAllStockpiles()
+    {
+        Stockpile[] allStockpiles = new Stockpile[0];
+        for (int i = 0; i < allTrains.Length; i++)
+        {
+            allStockpiles = allStockpiles.Concat(allTrains[i].GetAllStockpiles()).ToArray();
+        }
+        return allStockpiles;
+    }
+
     public InterceptInfo TryInterceptTrain(Vector3 startPos)
     {
+        Debug.Log("Running base TryIntercept. Shouldn't be run. Defaults are outdated");
         // if no preference, try the first train
         return TryInterceptTrain(allTrains[0], allTrains.Length, 5, 25, 5, startPos, 1f);
     }
@@ -90,6 +101,8 @@ public class TrainManager : MonoBehaviour
     {
         //Debug.Log("Enter TryInterceptTrain");
         //Debug.LogFormat("Target Train: {0}",targetTrain.gameObject);
+
+        //Debug.Log("Enemy MoveSpeed: " + moveSpeed);
 
         InterceptInfo intercept = new InterceptInfo
         {
@@ -149,9 +162,9 @@ public class TrainManager : MonoBehaviour
                         intercept.link = boardingLinks[j];
                         intercept.train = allTrains[i];
                         intercept.successful = true;
-                        Debug.Log(gameObject.name + ": Successful Boarding at time = " + t);
+                        Debug.Log(gameObject.name + ": Successful Boarding at time = " + t + " at "+intercept.link);
 
-                        Debug.DrawLine(boardingPoints[j], startPos, Color.green, 5f);
+                        Debug.DrawLine(boardingPoints[j], startPos, Color.green, 15f);
 
                         break;
                     }
@@ -175,9 +188,9 @@ public class TrainManager : MonoBehaviour
 
                     // Visualization lines
                     Vector3 dir = (startPos - boardingPoints[j]).normalized;
-                    dir *= (currentDst - moveSpeed * (t / Time.fixedDeltaTime));
+                    dir *= (currentDst - moveSpeed * (t / Time.fixedDeltaTime)); // this is the miss distance
                     float percent = (float)t / timeMax;
-                    Debug.DrawRay(boardingPoints[j], dir, new Color(percent, percent, 0, 1), 5f);
+                    Debug.DrawRay(boardingPoints[j], dir, new Color(percent, percent, 0, 1), 15f);
                     //Debug.DrawLine(boardingPoints[j])
                 }
             }
@@ -186,12 +199,12 @@ public class TrainManager : MonoBehaviour
         if(!intercept.successful)
         {
             Debug.Log("No successful board. Moving close as I can get.");
-            Debug.DrawLine(intercept.position, startPos, new Color(1, 1, 0, 0.5f), 5f);
+            Debug.DrawLine(intercept.position, startPos, new Color(1, 0, 1, 1f), 15f); // new Color(1, 1, 0, 0.5f)
             
             // not a success
             // that means the values are just the closest
             // check if we checked all of the trains or if some of the trains we wanted to check were unboardable
-            if(targetIndex+numAdditionalTrains >= indexBoardable)
+            if (targetIndex+numAdditionalTrains >= indexBoardable)
             {
                 // some trains just weren't ready to be boarded
                 intercept.allTrainsChecked = false;

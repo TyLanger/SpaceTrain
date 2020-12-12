@@ -91,6 +91,8 @@ public class Enemy : MonoBehaviour {
 
     public void Initialize()
     {
+        // need an accurate move speed to be set before the AI runs
+        moveSpeed = StatsManager.Instance().BaseMoveSpeed * StatsManager.Instance().EnemyMoveMultiplier;
         StateMachineSetup();
     }
 
@@ -120,6 +122,7 @@ public class Enemy : MonoBehaviour {
         At(search, moveToTrain, HasTrainRZPoint());
         At(moveToTrain, board, CanBoard());
         At(moveToTrain, search, MissedWindow());
+        At(moveToTrain, search, MissedLink());
         At(moveToTrain, search, NewTrainsNowBoardable());
         At(board, searchOnTrain, OnTrain());
         At(searchOnTrain, plunder, HasPlunderTarget());
@@ -148,7 +151,7 @@ public class Enemy : MonoBehaviour {
         //TODO: have it expire. After you swap states, it is probably no longer relevent
         Func<bool> HasTrainRZPoint() => () => hasTrainRZPoint;
         // you have a rz point AND you're at it OR you're not at the rz point yet, but you are close enough to the boarding link. Maybe don't need the second compare
-        Func<bool> CanBoard() => () => HasTrainRZPoint()() && ((Vector3.Distance(transform.position, trainRZPoint) < TrainBoardDist)); //|| (Vector3.Distance(transform.position, TargetBoardingLink.groundPoint.position) < TrainBoardDist));
+        Func<bool> CanBoard() => () => HasTrainRZPoint()() && (Vector3.Distance(transform.position, TargetBoardingLink.groundPoint.position) < TrainBoardDist); //((Vector3.Distance(transform.position, trainRZPoint) < TrainBoardDist));
         Func<bool> MissedWindow() => () =>
         {
             // time of intercept should be calculated when the intercept is first calculated (but it's not ATM)
@@ -156,6 +159,20 @@ public class Enemy : MonoBehaviour {
             if (Time.time + predictedTimeRemaining > timeOfIntercept)
             {
                 return false; // return true; // Does not work ATM. Change back to true when it does
+            }
+            return false;
+        };
+        Func<bool> MissedLink() => () =>
+        {
+            // you got close to your link, but missed it
+            if (!interceptSuccessful)
+            {
+                // at your destination
+                if (Vector3.Distance(transform.position, trainRZPoint) < TrainBoardDist*2)
+                {
+                    //Debug.Log("Attempting to search again");
+                    return true;
+                }
             }
             return false;
         };
@@ -168,6 +185,7 @@ public class Enemy : MonoBehaviour {
                     // try to find a intercept again. There are more available trains this time
                     // should probably also put a check for how many trains you actually want to check.
                     // if you're only checking 1 train back, does it matter if train 5,6,7,8,9 are now boardable?
+                    //Debug.Log("New trains available; checking for a new intercept");
                     return true;
                 }
             }
@@ -422,6 +440,8 @@ public class Enemy : MonoBehaviour {
             // if it's not gonna respawn, just destroy it.
             // maybe it should be recycled into a pool?
             // depends how many enemies there gets to be
+            if(TargetMarker != null)
+                Destroy(TargetMarker.gameObject);
             Destroy(gameObject);
         }
     }
@@ -482,18 +502,24 @@ public class Enemy : MonoBehaviour {
         trainEngine = info.train;
         TargetBoardingLink = info.link;
         hasTrainRZPoint = true;
-        interceptSuccessful = true;
+        interceptSuccessful = info.successful;
 
         if (!info.successful)
         {
             // success being false means you didn't find an intercept and are instead going as close as you can
             // need to try again to find an intercept
             // wait some time.
-            if(!info.allTrainsChecked)
+            numBoardableTrainsAtIntercept = TrainManager.Instance.indexBoardable;
+
+            /*
+            if (!info.allTrainsChecked)
             {
+                // this is redundant
                 interceptSuccessful = false;
-                numBoardableTrainsAtIntercept = TrainManager.Instance.indexBoardable;
+                //numBoardableTrainsAtIntercept = TrainManager.Instance.indexBoardable;
+
             }
+            */
         }
     }
 

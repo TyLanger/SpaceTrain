@@ -72,6 +72,7 @@ internal class SearchForTrainIntercept : IState
 	}
 	
 	public void OnEnter() {
+        _enemy.hasTrainRZPoint = false;
 		ChooseNearestTrain();
         _enemy.stateMemory += this;
         //Debug.Log("Entered Search for Train Intercept");

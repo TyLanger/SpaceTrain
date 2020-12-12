@@ -1979,6 +1979,7 @@ MonoBehaviour:
   path: []
   pathIndex: 0
   pathEnded: 0
+  distToNextNode: 0
   weapon: {fileID: 0}
   timeOfIntercept: 0
   hostileTarget: {fileID: 0}
@@ -4163,7 +4164,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4795677687374336, guid: a432cda754608db429175e24df495cd5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -10.82
+      value: -46.31
       objectReference: {fileID: 0}
     - target: {fileID: 4795677687374336, guid: a432cda754608db429175e24df495cd5, type: 3}
       propertyPath: m_LocalRotation.x

@@ -140,8 +140,10 @@ public class SearchForTargetsOnTrain : IState
             
             Debug.Log("Didn't see any targets");
 
-            Stockpile stockToLoot = EvaluateBestStockpileToLoot(_enemy.trainEngine?.GetAllStockpiles());
-            if(stockToLoot != null)
+            //Stockpile stockToLoot = EvaluateBestStockpileToLoot(_enemy.trainEngine?.GetAllStockpiles());
+            Stockpile stockToLoot = EvaluateBestStockpileToLoot(TrainManager.Instance.GetAllStockpiles());
+
+            if (stockToLoot != null)
             {
                 _enemy.plunderTarget = stockToLoot;
             }
