@@ -62,6 +62,7 @@ public class Enemy : MonoBehaviour {
 
     protected StateMachine _stateMachine;
     public float timeOfIntercept;
+    public float interceptDistance;
     //public Transform plunderTarget; // should this be a Stockpile (instead of a transform)?
     public GameObject hostileTarget;
     public bool canSeeHostileTarget = false;
@@ -167,8 +168,8 @@ public class Enemy : MonoBehaviour {
             // you got close to your link, but missed it
             if (!interceptSuccessful)
             {
-                // at your destination
-                if (Vector3.Distance(transform.position, trainRZPoint) < TrainBoardDist*2)
+                // retry when halfway to rz point
+                if (Vector3.Distance(transform.position, trainRZPoint) < interceptDistance/2)
                 {
                     //Debug.Log("Attempting to search again");
                     return true;
@@ -490,9 +491,22 @@ public class Enemy : MonoBehaviour {
             return;
         }
         
-        InterceptInfo info = TrainManager.Instance.TryInterceptTrain(trainEngine, 1, 1, 10, 1, transform.position, moveSpeed);
+        InterceptInfo info = TrainManager.Instance.TryInterceptTrain(trainEngine, 1, 1, 10, 1, transform.position, moveSpeed, false);
+        // Debugging to see if one version is better
+        // new seems better almost always
+        // there is the odd time where the old version gave a shorter distance
+        // and times where new didnt get an intercept, but old did
+        /*
+        InterceptInfo oldInfo = TrainManager.Instance.TryInterceptTrain(trainEngine, 1, 1, 10, 1, transform.position, moveSpeed, true);
 
-        if(info.train == null)
+        float newDist = Vector3.Distance(transform.position, info.position);
+        float oldDist = Vector3.Distance(transform.position, oldInfo.position);
+        Debug.LogFormat("New version dist: {0}, old version dist: {1}, Shorter: {2}", newDist, oldDist, (newDist <= oldDist) ? "New" : "Old");
+        Debug.DrawLine(transform.position, info.position, Color.blue, 15f);
+        Debug.DrawLine(transform.position, oldInfo.position, new Color(1, 1, 0, 1), 15f);
+        */
+
+        if (info.train == null)
         {
             Debug.Log("No train info.");
             //info = TrainManager.Instance.TryInterceptTrain(trainEngine, 1, 5, 25, 5, moveSpeed);
@@ -503,6 +517,7 @@ public class Enemy : MonoBehaviour {
         TargetBoardingLink = info.link;
         hasTrainRZPoint = true;
         interceptSuccessful = info.successful;
+        interceptDistance = Vector3.Distance(trainRZPoint, transform.position);
 
         if (!info.successful)
         {

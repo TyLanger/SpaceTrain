@@ -85,6 +85,95 @@ public class TrainManager : MonoBehaviour
         return TryInterceptTrain(allTrains[0], allTrains.Length, 5, 25, 5, startPos, 1f);
     }
 
+    public InterceptInfo TryInterceptTrain(Train targetTrain, int numAdditionalTrains, int timeMin, int timeMax, int timeStep, Vector3 startPos, float moveSpeed, bool oldStyle = false)
+    {
+        //Debug.Log("Trying to intercept: " +targetTrain.gameObject.name);
+        if(oldStyle)
+        {
+            return TryInterceptTrain(targetTrain, numAdditionalTrains, timeMin, timeMax, timeStep, startPos, moveSpeed);
+        }
+
+        InterceptInfo intercept = new InterceptInfo
+        {
+            successful = false,
+            allTrainsChecked = true
+        };
+
+        int targetIndex = System.Array.IndexOf(allTrains, targetTrain);
+
+        Vector3[] boardingPoints;
+        BoardingLink[] boardingLinks;
+        float closestMissDst = 0;
+        float currentDst = 0;
+
+        for (int t = timeMin; t < timeMax; t += timeStep)
+        {
+            if(intercept.successful)
+            {
+                break;
+            }
+
+            for (int i = targetIndex; i < indexBoardable; i++)
+            {
+                //Debug.LogFormat("i-tI > num. i: {0}, targetIndex: {1}, numAdditionalTrains: {2}", i, targetIndex, numAdditionalTrains);
+                if(intercept.successful || ((i - targetIndex) > numAdditionalTrains))
+                {
+                    break;
+                }
+
+                bool rightSide = startPos.x > allTrains[i].transform.position.x;
+                (boardingPoints, boardingLinks) = allTrains[i].GetBoardingLocationsInTime(t, rightSide);
+                for (int j = 0; j < boardingPoints.Length; j++)
+                {
+                    currentDst = Vector3.Distance(startPos, boardingPoints[j]);
+                    float missDistance = currentDst - moveSpeed * (t / Time.fixedDeltaTime);
+
+                    if (missDistance < 0)
+                    {
+                        intercept.position = boardingPoints[j];
+                        intercept.link = boardingLinks[j];
+                        intercept.train = allTrains[i];
+                        intercept.successful = true;
+                        Debug.Log(gameObject.name + ": Successful Boarding at time = " + t + " at " + intercept.link);
+
+                        //Debug.DrawLine(boardingPoints[j], startPos, Color.green, 15f);
+
+                        break;
+                    }
+                    else
+                    {
+                        if (missDistance < closestMissDst || closestMissDst == 0)
+                        {
+                            closestMissDst = missDistance;
+                            // keep looking for a better intercept
+                            // but keep track of the best so far
+                            intercept.position = boardingPoints[j];
+                            intercept.link = boardingLinks[j];
+                            intercept.train = allTrains[i];
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!intercept.successful)
+        {
+            Debug.Log("No successful board. Moving close as I can get.");
+            //Debug.DrawLine(intercept.position, startPos, new Color(1, 0, 1, 1f), 15f); // new Color(1, 1, 0, 0.5f)
+
+            // not a success
+            // that means the values are just the closest
+            // check if we checked all of the trains or if some of the trains we wanted to check were unboardable
+            if (targetIndex + numAdditionalTrains >= indexBoardable)
+            {
+                // some trains just weren't ready to be boarded
+                intercept.allTrainsChecked = false;
+            }
+        }
+
+        return intercept;
+    }
+
     /// <summary>
     /// Returns a point where you can go to intercept.
     /// Also returns the train you will end up boarding.
@@ -111,9 +200,6 @@ public class TrainManager : MonoBehaviour
         };
 
         int targetIndex = System.Array.IndexOf(allTrains, targetTrain);
-
-        //Debug.Log("TargetIndex (expect 1): " + targetIndex);
-        //Debug.Log("Number boardable (expect 2): " + indexBoardable);
 
         // if you give a targetTrain
         // try that train first and then check other trains behind it
@@ -164,7 +250,7 @@ public class TrainManager : MonoBehaviour
                         intercept.successful = true;
                         Debug.Log(gameObject.name + ": Successful Boarding at time = " + t + " at "+intercept.link);
 
-                        Debug.DrawLine(boardingPoints[j], startPos, Color.green, 15f);
+                        //Debug.DrawLine(boardingPoints[j], startPos, Color.green, 15f);
 
                         break;
                     }
@@ -190,7 +276,7 @@ public class TrainManager : MonoBehaviour
                     Vector3 dir = (startPos - boardingPoints[j]).normalized;
                     dir *= (currentDst - moveSpeed * (t / Time.fixedDeltaTime)); // this is the miss distance
                     float percent = (float)t / timeMax;
-                    Debug.DrawRay(boardingPoints[j], dir, new Color(percent, percent, 0, 1), 15f);
+                    //Debug.DrawRay(boardingPoints[j], dir, new Color(percent, percent, 0, 1), 15f);
                     //Debug.DrawLine(boardingPoints[j])
                 }
             }
@@ -199,7 +285,7 @@ public class TrainManager : MonoBehaviour
         if(!intercept.successful)
         {
             Debug.Log("No successful board. Moving close as I can get.");
-            Debug.DrawLine(intercept.position, startPos, new Color(1, 0, 1, 1f), 15f); // new Color(1, 1, 0, 0.5f)
+            //Debug.DrawLine(intercept.position, startPos, new Color(1, 0, 1, 1f), 15f); // new Color(1, 1, 0, 0.5f)
             
             // not a success
             // that means the values are just the closest
