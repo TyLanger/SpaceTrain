@@ -26,6 +26,7 @@ public class Enemy : MonoBehaviour {
     // don't start moving again until you are outside the outer attack range.
     // these might be redundant for melee attacks. Need to test them.
     bool wantToMove = true;
+    protected bool followingTrain = false;
 
     public Vector3 moveTarget;
 
@@ -219,7 +220,7 @@ public class Enemy : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    protected virtual void FixedUpdate()
     {
         if (!alive)
             return;
@@ -538,9 +539,14 @@ public class Enemy : MonoBehaviour {
         }
     }
 
+    internal virtual void FollowTrain() {}
+
+    internal virtual void SwapOrbits() {}
+
     internal void BoardTrain()
     {
         transform.position = TargetBoardingLink.GetOnBoardPosition();
+        HoldPosition();
         OnTrainBoarded?.Invoke();
         onTrain = true;
         // finding targets should be handled by SearchForTargetsOnTrain

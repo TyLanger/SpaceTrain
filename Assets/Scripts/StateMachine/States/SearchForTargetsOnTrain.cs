@@ -97,7 +97,7 @@ public class SearchForTargetsOnTrain : IState
         _enemy.stateMemory += this;
         //Debug.Log("Entered " + this);
 
-        _enemy.HoldPosition(); // stand still so you don't fall off
+        //_enemy.HoldPosition(); // stand still so you don't fall off
 
         //start with enemies you can see
         // pick the nearest one

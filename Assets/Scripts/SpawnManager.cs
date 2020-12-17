@@ -19,7 +19,7 @@ public class SpawnManager : MonoBehaviour
 
     float timeBetweenGroupSpawns = 15;
     float timeBetweenEnitiesInGroup = 1;
-    float timeOfNextGroup = 1005;
+    float timeOfNextGroup = 10;
     int sizeOfGroup = 5;
 
     int currentGroupSpawns = 0;
